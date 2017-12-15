@@ -26,7 +26,7 @@ class Parameter:
     # If terminal_value if not None, the algorithm should stop when such value
     # is found
     def __init__(self, algorithm=None, suppression=False, sequential=True, budget=0, autoset=True, precision=None, uncertain_bits=None, init_samples=None,
-                 time_budget=None, terminal_value=None, baselines=None, non_update_baselines_allowed=None):
+                 time_budget=None, terminal_value=None, baselines=None, precision_function=None):
         self.__algorithm = algorithm
         self.__budget = budget
 
@@ -38,6 +38,7 @@ class Parameter:
         # for racos optimization
         self.__sequential = sequential
         self.__precision = precision
+        self.__precision_function = precision_function
         self.__uncertain_bits = uncertain_bits
         self.__train_size = 0
         self.__positive_size = 0
@@ -50,7 +51,6 @@ class Parameter:
         self.__max_stay_function = None
         self.__max_stay_precision = 0
         self.__non_update_allowed = 0
-        self.__non_update_baselines_allowed = non_update_baselines_allowed
         self.__baselines = baselines
 
         # for pareto optimization
@@ -82,13 +82,26 @@ class Parameter:
         else:
             self.__train_size = 22
             self.__positive_size = 2
+        # elif budget <= 2500:
+        #     self.__train_size = 22
+        #     self.__positive_size = 3
+        # elif budget <= 5000:
+        #     self.__train_size = 36
+        #     self.__positive_size = 4
+        # elif budget < 10000:
+        #     self.__train_size = 56
+        #     self.__positive_size = 6
+        # else:
+        #     self.__train_size = 76
+        #     self.__positive_size = 8
+
         self.__negative_size = self.__train_size - self.__positive_size
 
-    def get_non_update_baselines_allowed(self):
-        return self.__non_update_baselines_allowed
+    def get_precision_function(self):
+        return self.__precision_function
 
-    def set_non_update_baselines_allowed(self, non_update_baselines_allowed):
-        self.__non_update_baselines_allowed = non_update_baselines_allowed
+    def set_precision_function(self, precision_function):
+        self.__precision_function = precision_function
 
     def get_suppressioin(self):
         return self._suppression

@@ -49,12 +49,12 @@ class SRacos(RacosCommon):
                     self._objective.get_dim())
             # panic stop
             if solution is None:
-                print(" [break loop] because solution is None")
+                ToolFunction.log(" [break loop] because solution is None")
                 return self._best_solution
             if distinct_flag is False:
                 current_not_distinct_times += 1
                 if current_not_distinct_times >= max_distinct_repeat_times:
-                    print(
+                    ToolFunction.log(
                         "[break loop] because distinct_flag is false too much times")
                     return self._best_solution
                 else:
@@ -69,7 +69,7 @@ class SRacos(RacosCommon):
             if last_best is not None and last_best - self._best_solution.get_value() < parameter.get_max_stay_precision():
                 current_stay_times += 1
                 if current_stay_times >= max_stay_times:
-                    print(
+                    ToolFunction.log(
                         "[break loop] because stay longer than max_stay_times, break loop")
                     return self._best_solution
             else:
