@@ -65,6 +65,7 @@ class RacosCommon:
             if distinct_flag:
                 self._objective.eval(x)
                 self._data.append(x)
+                ToolFunction.log(" init solution. random %s, eval %s" % (i, x.get_value()))
                 i += 1
         self.selection()
         return

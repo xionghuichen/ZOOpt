@@ -173,19 +173,19 @@ class SSRacos(SRacos):
         else:
             solutions = self.sort_solution_list(
                 self._possible_solution_list, key=lambda x: x.get_resample_value())
-            positive_solution = [solutions[0]]# self._parameter.get_positive_size()]
-            positive_solution.append(self._positive_data[0])
-            # solutions = self.sort_solution_list(
-            #     self._possible_solution_list, key=lambda x: x.get_resample_value())
-            # half_size = int(self._parameter.get_positive_size()/2)
-            # positive_solution = self._positive_data[0:half_size]
-            # insert_number = 0
-            # for item in solutions:
-            #     if item not in positive_solution:
-            #         positive_solution.append(item)
-            #         insert_number += 1
-            #         if insert_number >= half_size:
-            #             break
+            # positive_solution = [solutions[0]]# self._parameter.get_positive_size()]
+            # positive_solution.append(self._positive_data[0])
+            solutions = self.sort_solution_list(
+                self._possible_solution_list, key=lambda x: x.get_resample_value())
+            half_size = int(self._parameter.get_positive_size()/2)
+            positive_solution = self._positive_data[0:half_size]
+            insert_number = 0
+            for item in solutions:
+                if item not in positive_solution:
+                    positive_solution.append(item)
+                    insert_number += 1
+                    if insert_number >= half_size:
+                        break
             return positive_solution
 
     def sort_solution_list(self, solution_list, key=lambda x: x.get_value()):
