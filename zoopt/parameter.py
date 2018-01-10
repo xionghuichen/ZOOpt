@@ -26,7 +26,7 @@ class Parameter:
     # If terminal_value if not None, the algorithm should stop when such value
     # is found
     def __init__(self, algorithm=None, suppression=False, sequential=True, budget=0, autoset=True, precision=None, uncertain_bits=None, init_samples=None,
-                 time_budget=None, terminal_value=None, baselines=None, precision_function=None):
+                 time_budget=None, terminal_value=None, baselines=None, precision_function=None, max_neg_size=None):
         self.__algorithm = algorithm
         self.__budget = budget
 
@@ -52,6 +52,7 @@ class Parameter:
         self.__max_stay_precision = 0
         self.__non_update_allowed = 0
         self.__baselines = baselines
+        self.__max_neg_size = max_neg_size
 
         # for pareto optimization
         self.__isolationFunc = lambda x: 0
@@ -60,6 +61,11 @@ class Parameter:
             self.auto_set(budget)
         return
 
+    def set_max_neg_size(self, mns):
+        self.__max_neg_size = mns
+
+    def get_max_neg_size(self):
+        return self.__max_neg_size
     # Set train_size, positive_size, negative_size by following rules:
     # budget < 3 ->> error
     # budget: 4-50 ->> train_size = 4, positive_size = 1

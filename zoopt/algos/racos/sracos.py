@@ -131,11 +131,16 @@ class SRacos(RacosCommon):
             iset.insert(index, x)
             worst_ele = iset.pop()
         else:
-            worst_ele, worst_index = Solution.find_maximum(iset)
-            if worst_ele.get_value() > x.get_value():
-                iset[worst_index] = x
-            else:
-                worst_ele = x
+                worst_ele, worst_index = Solution.find_maximum(iset)
+                if worst_ele.get_value() > x.get_value():
+                    if len(iset) < self._parameter.get_max_neg_size():
+                        iset.append(x)
+                    else:
+                        iset[worst_index] = x
+                else:
+                    if len(iset) < self._parameter.get_max_neg_size():
+                        iset.append(x)
+                    worst_ele = x
         return worst_ele
 
     # Random replace
