@@ -46,7 +46,7 @@ class RacosOptimization:
                 objective, parameter, ub)
         return self.__best_solution
 
-    def get_best_sol(self):
+    def get_best_sol(self): 
         return self.__best_solution
 
     @staticmethod

@@ -37,6 +37,7 @@ class SSRacos(SRacos):
         self.init_attribute()
         self.i = 0
         iteration_num = self._parameter.get_budget() - self._parameter.get_train_size()
+        iteration_num = iteration_num
         time_log1 = time.time()
         max_distinct_repeat_times = 100
         current_not_distinct_times = 0
@@ -88,8 +89,9 @@ class SSRacos(SRacos):
                     # if best_solution stay longer than max_stay_times, break
                     if last_best is not None and last_best - best_solution.get_resample_value() < parameter.get_max_stay_precision():
                         current_stay_times += 1
-                        ToolFunction.log("[max stay test] last_best %s, current best %s, stay_times %s, max_stay_times %s, precision %s, i %s" % (
-                            last_best, best_solution.get_resample_value(), current_stay_times, max_stay_times, gl.precision, self.i))
+
+                        ToolFunction.log("[max stay test] last_best %s, current best %s, stay_times %s, max_stay_times %s, precision %s. iteration_num %s. i %s" % (
+                            last_best, best_solution.get_resample_value(), current_stay_times, max_stay_times, gl.precision, iteration_num, self.i))
                         if current_stay_times >= max_stay_times:
                             ToolFunction.log(
                                 "[max stay test][break loop] because stay longer than max_stay_times, break loop")
@@ -167,9 +169,13 @@ class SSRacos(SRacos):
                 return sort_solution[0]
 
     def get_real_positive_solution_list(self):
-        if len(self._possible_solution_list) < self._parameter.get_positive_size():
+        if len(self._possible_solution_list) < 1:  # self._parameter.get_positive_size():
             return self._positive_data
         else:
+            solutions = self.sort_solution_list(
+                self._possible_solution_list, key=lambda x: x.get_resample_value())
+            # positive_solution = [solutions[0]]# self._parameter.get_positive_size()]
+            # positive_solution.append(self._positive_data[0])
             solutions = self.sort_solution_list(
                 self._possible_solution_list, key=lambda x: x.get_resample_value())
             half_size = int(self._parameter.get_positive_size()/2)
