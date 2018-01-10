@@ -1,7 +1,7 @@
 
 from zoopt.solution import Solution
 from zoopt.utils.zoo_global import pos_inf
-
+import numpy as np
 """
 The class Objective represents the objective function and its associated variables
 
@@ -12,7 +12,7 @@ Author:
 
 class Objective:
 
-    def __init__(self, func=None, dim=None, constraint=None, re_sample_func=None, balance_rate=1):
+    def __init__(self, func=None, dim=None, constraint=None, re_sample_func=None, balance_rate=1, tester=None, origin_solution=None, return_before=None):
         # Objective function defined by the user
         self.__func = func
         # Number of dimensions, dimension bounds are in the dim object
@@ -26,6 +26,9 @@ class Objective:
         self.__history = []
         self.__re_sample_func = re_sample_func
         self.__balance_rate = balance_rate
+        self.tester = tester
+        self.origin_solution = np.array(origin_solution)
+        self.return_before = return_before
 
     # Construct a solution from x
     def construct_solution(self, x, parent=None):
@@ -36,7 +39,14 @@ class Objective:
         # be invoked explicitly
         return new_solution
 
+    def record_distance(self, new_solution):
+
+        distance = np.linalg.norm(np.array(new_solution) - self.origin_solution)
+        print("[distance] %s" % distance)
+        self.tester.add_custom_record('distance', x=self.tester.time_step_holder.get_time(
+        ), y=distance*200, x_name='time_step', y_name='distance')
     # evaluate the objective function of a solution
+
     def eval(self, solution):
         solution.set_value(self.__func(solution))
         self.__history.append(solution.get_value())
