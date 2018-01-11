@@ -85,15 +85,15 @@ class Parameter:
         elif budget <= 1000:
             self.__train_size = 12
             self.__positive_size = 2
-        else:
+        else:  # budget <= 2500:
             self.__train_size = 22
-            self.__positive_size = 2
-        # elif budget <= 2500:
-        #     self.__train_size = 22
-        #     self.__positive_size = 3
-        # elif budget <= 5000:
+            self.__positive_size = 2  # origin
+        # else:
         #     self.__train_size = 36
         #     self.__positive_size = 4
+        # else:  # if # budget <= 5000:
+            # self.__train_size = 36
+            # self.__positive_size = 4
         # elif budget < 10000:
         #     self.__train_size = 56
         #     self.__positive_size = 6
@@ -188,6 +188,7 @@ class Parameter:
 
     def set_positive_size(self, size):
         self.__positive_size = size
+        self.__negative_size = self.__train_size - size
         return
 
     def get_positive_size(self):

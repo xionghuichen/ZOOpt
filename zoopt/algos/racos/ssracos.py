@@ -37,7 +37,7 @@ class SSRacos(SRacos):
         self.init_attribute()
         self.i = 0
         iteration_num = self._parameter.get_budget() - self._parameter.get_train_size()
-        iteration_num = iteration_num 
+        iteration_num = iteration_num
         time_log1 = time.time()
         max_distinct_repeat_times = 100
         current_not_distinct_times = 0
@@ -89,6 +89,7 @@ class SSRacos(SRacos):
                     # if best_solution stay longer than max_stay_times, break
                     if last_best is not None and last_best - best_solution.get_resample_value() < parameter.get_max_stay_precision():
                         current_stay_times += 1
+
                         ToolFunction.log("[max stay test] last_best %s, current best %s, stay_times %s, max_stay_times %s, precision %s. iteration_num %s. i %s" % (
                             last_best, best_solution.get_resample_value(), current_stay_times, max_stay_times, gl.precision, iteration_num, self.i))
                         if current_stay_times >= max_stay_times:
@@ -168,7 +169,7 @@ class SSRacos(SRacos):
                 return sort_solution[0]
 
     def get_real_positive_solution_list(self):
-        if len(self._possible_solution_list) < 1:# self._parameter.get_positive_size():
+        if len(self._possible_solution_list) < 1:  # self._parameter.get_positive_size():
             return self._positive_data
         else:
             solutions = self.sort_solution_list(
@@ -213,6 +214,7 @@ class SSRacos(SRacos):
         for data in self._positive_data:
             self._objective.resample(
                 data, self.get_parameters().get_resample_times())
+            self._objective.record_distance(data.get_x())
 
     def _is_worest(self, solution):
         return self._positive_data[-1].get_value() <= solution.get_value()
