@@ -82,6 +82,8 @@ class RacosCommon:
         self._negative_data = new_data[
             self._parameter.get_positive_size(): self._parameter.get_train_size()]
         self._best_solution = self._positive_data[0]
+        # set origin solution
+        self._objective.origin_solution = np.array(new_data.get_x())
         return
 
     # Distinct sample from dim, return a solution
