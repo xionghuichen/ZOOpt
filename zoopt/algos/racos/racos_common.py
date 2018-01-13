@@ -2,7 +2,7 @@
 import copy
 import sys
 from zoopt.utils.tool_function import ToolFunction
-
+import numpy as np
 """
 The class RacosCommon contains common attributes and methods between Racos and SRacos.
 Class Racos and SRacos both inherit from RacosCommon.
@@ -83,7 +83,7 @@ class RacosCommon:
             self._parameter.get_positive_size(): self._parameter.get_train_size()]
         self._best_solution = self._positive_data[0]
         # set origin solution
-        self._objective.origin_solution = np.array(new_data.get_x())
+        self._objective.origin_solution = np.array(new_data[0].get_x())
         return
 
     # Distinct sample from dim, return a solution
