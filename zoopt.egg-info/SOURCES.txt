@@ -17,7 +17,6 @@ example/simple_functions/fx.py
 example/sparse_regression/__init__.py
 example/sparse_regression/example.py
 zoopt/__init__.py
-zoopt/data_holder.py
 zoopt/dimension.py
 zoopt/objective.py
 zoopt/opt.py

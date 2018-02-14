@@ -12,7 +12,8 @@ Author:
 
 class Objective:
 
-    def __init__(self, func=None, dim=None, constraint=None, re_sample_func=None, balance_rate=1, tester=None, origin_solution=None, return_before=None):
+    def __init__(self, func=None, dim=None, constraint=None, re_sample_func=None, balance_rate=1, tester=None, origin_solution=None,
+                 return_before=None, agent=None):
         # Objective function defined by the user
         self.__func = func
         # Number of dimensions, dimension bounds are in the dim object
@@ -29,6 +30,7 @@ class Objective:
         self.tester = tester
         self.origin_solution = np.array(origin_solution)
         self.return_before = return_before
+        self.agent = agent
 
     # Construct a solution from x
     def construct_solution(self, x, parent=None):

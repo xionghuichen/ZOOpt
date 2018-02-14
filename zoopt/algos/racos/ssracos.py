@@ -98,6 +98,9 @@ class SSRacos(SRacos):
                             return self.get_best_solution()
                     else:
                         current_stay_times = 0
+                        ToolFunction.log("[last best updated] last_best %s, current best %s, stay_times %s, max_stay_times %s, precision %s. iteration_num %s. i %s" % (
+                            last_best, best_solution.get_resample_value(), current_stay_times, max_stay_times, gl.precision, iteration_num, self.i))
+
                     last_best = best_solution.get_resample_value()
                     max_stay_times = max_stay_function(last_best)
                     precision = precision_function(last_best)
