@@ -54,6 +54,7 @@ class RacosCommon:
                 if j == 0:
                     ret = self._objective.tester.check_and_test(self._objective.agent, always=True)
                     ToolFunction.log(" baseline ret %s" % (ret))
+                    x.set_value(ret)
                 i += 1
         # otherwise generate random solutions
         iteration_num = self._parameter.get_train_size()
