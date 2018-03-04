@@ -26,7 +26,8 @@ class Parameter:
     # If terminal_value if not None, the algorithm should stop when such value
     # is found
     def __init__(self, algorithm=None, suppression=False, sequential=True, budget=0, autoset=True, precision=None, uncertain_bits=None, init_samples=None,
-                 time_budget=None, terminal_value=None, baselines=None, precision_function=None, max_neg_size=None):
+                 time_budget=None, terminal_value=None, baselines=None, precision_function=None, max_neg_size=None ,
+                 early_stop=None):
         self.__algorithm = algorithm
         self.__budget = budget
 
@@ -56,6 +57,7 @@ class Parameter:
 
         # for pareto optimization
         self.__isolationFunc = lambda x: 0
+        self.early_stop = early_stop
 
         if budget != 0 and autoset is True:
             self.auto_set(budget)

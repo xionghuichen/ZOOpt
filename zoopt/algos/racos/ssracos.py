@@ -51,7 +51,7 @@ class SSRacos(SRacos):
         non_update_times = 0
         current_stay_times = 0
         non_update_baselines_times = 0
-
+        dont_early_stop =False
         while self.i < iteration_num:
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
@@ -129,6 +129,16 @@ class SSRacos(SRacos):
                 if (time.time() - time_log1) >= self._parameter.get_time_budget():
                     ToolFunction.log('time_budget runs out')
                     return self.get_best_solution()
+            # early stop
+            if self._parameter.early_stop is not None and not dont_early_stop:
+                if solution.get_value() < self._objective.return_before * 0.9:
+                    dont_early_stop = True
+                elif self.i > self._parameter.early_stop:
+                    ToolFunction.log(
+                        '[break loop] early stop for too low value.')
+                    return self._positive_data[0]
+                ToolFunction.log('[early stop warning ]: current iter %s , target %s ' % (self.i, self._parameter.early_stop))
+
             # terminal_value check
             if self._parameter.get_terminal_value() is not None:
                 solution = self.get_best_solution(for_test=True)
