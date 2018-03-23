@@ -27,7 +27,7 @@ class Parameter:
     # is found
     def __init__(self, algorithm=None, suppression=False, sequential=True, budget=0, autoset=True, precision=None, uncertain_bits=None, init_samples=None,
                  time_budget=None, terminal_value=None, baselines=None, precision_function=None, max_neg_size=None ,
-                 early_stop=None):
+                 early_stop=None, update_q_frequent=None, re_eval_frequent=None, use_re_eval=False):
         self.__algorithm = algorithm
         self.__budget = budget
 
@@ -54,11 +54,12 @@ class Parameter:
         self.__non_update_allowed = 0
         self.__baselines = baselines
         self.__max_neg_size = max_neg_size
-
+        self.use_re_eval = use_re_eval
         # for pareto optimization
         self.__isolationFunc = lambda x: 0
         self.early_stop = early_stop
-
+        self.update_q_frequent = update_q_frequent
+        self.re_eval_frequent = re_eval_frequent
         if budget != 0 and autoset is True:
             self.auto_set(budget)
         return

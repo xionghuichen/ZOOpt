@@ -36,6 +36,7 @@ zoopt/algos/racos/racos_classification.py
 zoopt/algos/racos/racos_common.py
 zoopt/algos/racos/racos_optimization.py
 zoopt/algos/racos/sracos.py
+zoopt/algos/racos/sracos_re_eval.py
 zoopt/algos/racos/ssracos.py
 zoopt/utils/__init__.py
 zoopt/utils/tool_function.py

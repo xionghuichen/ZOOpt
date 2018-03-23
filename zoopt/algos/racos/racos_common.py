@@ -52,7 +52,7 @@ class RacosCommon:
                 self._data.append(x)
                 ToolFunction.log(" init solution %s, eval %s" % (i, x.get_value()))
                 if j == 0:
-                    ret = self._objective.tester.check_and_test(self._objective.agent, always=True, use_temp=True)
+                    ret = self._objective.tester.check_and_test(self._objective.agent, always=True)
                     ToolFunction.log(" baseline ret %s" % (ret))
                     x.set_value(-1 * ret)
                 i += 1
@@ -71,7 +71,7 @@ class RacosCommon:
                 self._data.append(x)
                 ToolFunction.log(" init solution. random %s, eval %s" % (i, x.get_value()))
                 i += 1
-        self.selection()
+        self.selection(self._data)
         return
 
     # Sort self._data
@@ -79,12 +79,12 @@ class RacosCommon:
     # Choose first-positive_size solutions as self._positive_data
     # Choose [positive_size, train_size) (Include the begin, not include the
     # end) solutions as self._negative_data
-    def selection(self):
-        new_data = sorted(self._data, key=lambda x: x.get_value())
+    def selection(self, data):
+        new_data = sorted(data, key=lambda x: x.get_value())
         self._data = new_data[0:self._parameter.get_train_size()]
         self._positive_data = new_data[0: self._parameter.get_positive_size()]
         self._negative_data = new_data[
-            self._parameter.get_positive_size(): self._parameter.get_train_size()]
+            self._parameter.get_positive_size():]
         self._best_solution = self._positive_data[0]
         # set origin solution
         self._objective.origin_solution = np.array(new_data[0].get_x())

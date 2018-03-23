@@ -1,5 +1,5 @@
 from zoopt.algos.racos.ssracos import SSRacos
-
+from zoopt.algos.racos.sracos_re_eval import SRacosReEval
 from zoopt.algos.racos.sracos import SRacos
 from zoopt.algos.racos.racos import Racos
 
@@ -35,8 +35,11 @@ class RacosOptimization:
                 self.__algorithm = SRacos()
                 self.__best_solution = self.__algorithm.opt(
                     objective, parameter, strategy, ub)
+            elif parameter.use_re_eval:
+                self.__algorithm = SRacosReEval()
+                self.__best_solution = self.__algorithm.opt(
+                    objective, parameter, strategy, ub)
             else:
-
                 self.__algorithm = SSRacos()
                 self.__best_solution = self.__algorithm.opt(
                     objective, parameter, strategy, ub)
