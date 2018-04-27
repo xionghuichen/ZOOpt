@@ -16,18 +16,17 @@ Author:
 
 class SRacos(RacosCommon):
 
-    def __init__(self):
-        RacosCommon.__init__(self)
+    def __init__(self, objective, parameter, strategy='WR', ub=1):
+        self.strategy = strategy
+        RacosCommon.__init__(self, objective, parameter, ub)
         return
 
     # SRacos's optimization function
     # Default strategy is WR(worst replace)
     # Default uncertain_bits is 1, but actually ub will be set either by user
     # or by RacosOptimization automatically.
-    def opt(self, objective, parameter, strategy='WR', ub=1):
+    def opt(self):
         self.clear()
-        self.set_objective(objective)
-        self.set_parameters(parameter)
         self.init_attribute()
         i = 0
         iteration_num = self._parameter.get_budget() - self._parameter.get_train_size()
@@ -35,7 +34,7 @@ class SRacos(RacosCommon):
         max_distinct_repeat_times = 100
         current_not_distinct_times = 0
         last_best = None
-        max_stay_times = parameter.get_max_stay()
+        max_stay_times = self._parameter.get_max_stay()
         current_stay_times = 0
         while i < iteration_num:
             if gl.rand.random() < self._parameter.get_probability():
@@ -60,9 +59,9 @@ class SRacos(RacosCommon):
                 else:
                     continue
             # evaluate the solution
-            objective.eval(solution)
+            self._objective.eval(solution)
             bad_ele = self.replace(self._positive_data, solution, 'pos')
-            self.replace(self._negative_data, bad_ele, 'neg', strategy)
+            self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
 
             # if best_solution stay longer than max_stay_times, break loop

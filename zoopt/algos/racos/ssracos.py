@@ -22,18 +22,17 @@ from zoopt.algos.racos.sracos import SRacos
 
 class SSRacos(SRacos):
 
-    def __init__(self):
-        SRacos.__init__(self)
+    def __init__(self, objective, parameter, strategy='WR', ub=1):
+        self.strategy = strategy
+        SRacos.__init__(self, objective, parameter, ub)
         return
 
     # SRacos's optimization function
     # Default strategy is WR(worst replace)
     # Default uncertain_bits is 1, but actually ub will be set either by user
     # or by RacosOptimization automatically.
-    def opt(self, objective, parameter, strategy='WR', ub=1):
+    def opt(self):
         self.clear()
-        self.set_objective(objective)
-        self.set_parameters(parameter)
         self.init_attribute()
         self.i = 0
         iteration_num = self._parameter.get_budget() - self._parameter.get_train_size()
@@ -137,7 +136,8 @@ class SSRacos(SRacos):
                     ToolFunction.log(
                         '[break loop] early stop for too low value.')
                     return self._positive_data[0]
-                ToolFunction.log('[early stop warning ]: current iter %s , target %s ' % (self.i, self._parameter.early_stop))
+                ToolFunction.log('[early stop warning ]: current iter %s , target %s. current value %s. target value %s'% (
+                    self.i, self._parameter.early_stop, solution.get_value(), self._objective.return_before * 0.9))
 
             # terminal_value check
             if self._parameter.get_terminal_value() is not None:
@@ -146,6 +146,7 @@ class SSRacos(SRacos):
                     ToolFunction.log('terminal function value reached')
                     return self.get_best_solution()
             self.i += 1
+        ToolFunction.log("[loop end] iter %s " % self.i)
         return self.get_best_solution()
 
     def update_possible_solution(self):

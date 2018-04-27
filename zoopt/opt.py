@@ -14,27 +14,27 @@ Author:
 
 class Opt:
 
-    def __init__(self):
-        return
-
-    @staticmethod
-    def min(objective, parameter):
+    def __init__(self, objective, parameter):
         Opt.set_global(parameter)
         constraint = objective.get_constraint()
         algorithm = parameter.get_algorithm()
+        self.objective = objective
+        self.parameter = parameter
         if algorithm:
             algorithm = algorithm.lower()
         result = None
         if constraint is not None and ((algorithm is None) or (algorithm == "poss")):
-            optimizer = ParetoOptimization()
-            result = optimizer.opt(objective, parameter)
-        elif constraint is None and ((algorithm is None) or (algorithm == "racos") or (algorithm == "sracos")) or (algorithm == "ssracos"):
-            optimizer = RacosOptimization()
-            result = optimizer.opt(objective, parameter)
+            self.optimizer = ParetoOptimization()
+        elif constraint is None and ((algorithm is None) or (algorithm == "racos") or (algorithm == "sracos")) or (
+                algorithm == "ssracos"):
+            self.optimizer = RacosOptimization(self.objective, self.parameter)
         else:
             ToolFunction.log(
                 "opt.py: No proper algorithm found for %s" % algorithm)
-        return result
+
+    def min(self):
+        return self.optimizer.opt()
+
 
     @staticmethod
     def set_global(parameter):

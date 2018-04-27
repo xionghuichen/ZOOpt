@@ -22,18 +22,17 @@ from zoopt.algos.racos.sracos import SRacos
 
 class SRacosReEval(SRacos):
 
-    def __init__(self):
-        SRacos.__init__(self)
+    def __init__(self, objective, parameter, strategy='WR', ub=1):
+        self.strategy = strategy
+        SRacos.__init__(self, objective, parameter, ub)
         return
 
     # SRacos's optimization function
     # Default strategy is WR(worst replace)
     # Default uncertain_bits is 1, but actually ub will be set either by user
     # or by RacosOptimization automatically.
-    def opt(self, objective, parameter, strategy='WR', ub=1):
+    def opt(self):
         self.clear()
-        self.set_objective(objective)
-        self.set_parameters(parameter)
         self.init_attribute()
         self.i = 0
         iteration_num = self._parameter.get_budget() - self._parameter.get_train_size()
@@ -42,15 +41,15 @@ class SRacosReEval(SRacos):
         max_distinct_repeat_times = 100
         current_not_distinct_times = 0
         dont_early_stop = False
-        non_update_allowed = parameter.get_non_update_allowed()
-        update_precision = parameter.get_max_stay_precision()
+        non_update_allowed = self._parameter.get_non_update_allowed()
+        update_precision = self._parameter.get_max_stay_precision()
         last_best = None
         non_update_times = 0
 
         while self.i < iteration_num:
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
-                    self._objective.get_dim(), self._positive_data, self._negative_data, ub)
+                    self._objective.get_dim(), self._positive_data, self._negative_data, self.ub)
                 classifier.mixed_classification()
                 solution, distinct_flag = self.distinct_sample_classifier(
                     classifier, True, self._parameter.get_train_size())
@@ -70,9 +69,9 @@ class SRacosReEval(SRacos):
                 else:
                     continue
             # evaluate the solution
-            objective.eval(solution)
+            self._objective.eval(solution)
             bad_ele = self.replace(self._positive_data, solution, 'pos')
-            self.replace(self._negative_data, bad_ele, 'neg', strategy)
+            self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
 
             if last_best is not None and last_best - self._best_solution.get_value() < update_precision:
@@ -110,8 +109,8 @@ class SRacosReEval(SRacos):
                     ToolFunction.log(
                         '[break loop] early stop for too low value.')
                     return self.get_best_solution()
-                ToolFunction.log(
-                    '[early stop warning ]: current iter %s , target %s ' % (self.i, self._parameter.early_stop))
+                ToolFunction.log('[early stop warning ]: current iter %s , target %s. current value %s. target value %s'% (
+                    self.i, self._parameter.early_stop, solution.get_value(), self._objective.return_before * 0.9))
 
             # terminal_value check
             if self._parameter.get_terminal_value() is not None:
@@ -163,3 +162,9 @@ class SRacosReEval(SRacos):
 
     def _is_worest(self, solution):
         return self._positive_data[-1].get_value() <= solution.get_value()
+
+    def add_custom_solution(self, solution):
+        if solution is not None:
+            bad_ele = self.replace(self._positive_data, solution, 'pos')
+            self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
+            self._best_solution = self._positive_data[0]

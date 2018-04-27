@@ -13,14 +13,12 @@ Author:
 
 class Racos(RacosCommon):
 
-    def __init__(self):
-        RacosCommon.__init__(self)
+    def __init__(self, objective, parameter, ub):
+        RacosCommon.__init__(self, objective, parameter, ub)
 
     # racos optimization function
-    def opt(self, objective, parameter, ub=1):
+    def opt(self):
         self.clear()
-        self.set_objective(objective)
-        self.set_parameters(parameter)
         self.init_attribute()
         t = self._parameter.get_budget() / self._parameter.get_negative_size()
         time_log1 = time.time()
@@ -30,7 +28,7 @@ class Racos(RacosCommon):
             while j < iteration_num:
                 if gl.rand.random() < self._parameter.get_probability():
                     classifier = RacosClassification(
-                        self._objective.get_dim(), self._positive_data, self._negative_data, ub)
+                        self._objective.get_dim(), self._positive_data, self._negative_data, self.ub)
                     classifier.mixed_classification()
                     solution, distinct_flag = self.distinct_sample_classifier(classifier, True,
                                                                               self._parameter.get_train_size())
@@ -43,7 +41,7 @@ class Racos(RacosCommon):
                 if distinct_flag is False:
                     continue
                 # evaluate the solution
-                objective.eval(solution)
+                self._objective.eval(solution)
                 self._data.append(solution)
                 j += 1
             self.selection()

@@ -14,9 +14,10 @@ Author:
 
 class RacosCommon:
 
-    def __init__(self):
-        self._parameter = None
-        self._objective = None
+    def __init__(self, parameter, objective, ub):
+        self._parameter = parameter
+        self._objective = objective
+        self.ub = ub
         # Solution set
         # Random sampled solutions construct self._data
         self._data = []
@@ -31,8 +32,6 @@ class RacosCommon:
 
     # Clear RacosCommon
     def clear(self):
-        self._parameter = None
-        self._objective = None
         # Solution
         self._data = []
         self._positive_data = []
@@ -51,13 +50,13 @@ class RacosCommon:
                 self._objective.eval(x)
                 self._data.append(x)
                 ToolFunction.log(" init solution %s, eval %s" % (i, x.get_value()))
-                if j == 0:
-                    ret = self._objective.tester.check_and_test(self._objective.agent, always=True)
-                    ToolFunction.log(" baseline ret %s" % (ret))
-                    x.set_value(-1 * ret)
+                # if j == 0:
+                    # ret = self._objective.tester.check_and_test(self._objective.agent, always=True)
+                    # ToolFunction.log(" baseline ret %s" % (ret))
+                    # x.set_value(-1 * ret)
                 i += 1
         # otherwise generate random solutions
-        iteration_num = self._parameter.get_train_size()
+        iteration_num = self._parameter.get_init_size() # get_train_size()
         while i < iteration_num:
             # distinct_flag: True means sample is distinct(can be use),
             # False means sample is distinct, you should sample again.
