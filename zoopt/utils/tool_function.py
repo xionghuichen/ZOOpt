@@ -1,6 +1,6 @@
 
 import pickle
-
+from baselines import logger
 """
 class ToolFunction defines some tool function used in project.
 
@@ -29,4 +29,4 @@ class ToolFunction:
 
     @staticmethod
     def log(text):
-        print('[zoopt] '+text)
+        logger.info('[zoopt]' + text)
