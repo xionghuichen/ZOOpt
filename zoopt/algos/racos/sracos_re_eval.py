@@ -73,8 +73,8 @@ class SRacosReEval(SRacos):
             bad_ele = self.replace(self._positive_data, solution, 'pos')
             self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
-
-            if last_best is not None and last_best - self._best_solution.get_value() < update_precision:
+            self.non_update_times = non_update_times
+            if last_best is not None and last_best.get_value() - self._best_solution.get_value() <= update_precision and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value()):
                 non_update_times += 1
                 if non_update_times >= non_update_allowed:
                     ToolFunction.log(
@@ -82,7 +82,7 @@ class SRacosReEval(SRacos):
                     return self._best_solution
             else:
                 non_update_times = 0
-            last_best = self._best_solution.get_value()
+            last_best = self._best_solution
 
             if self.i == 4:
                 time_log2 = time.time()
@@ -113,11 +113,11 @@ class SRacosReEval(SRacos):
                     self.i, self._parameter.early_stop, solution.get_value(), self._objective.return_before * 0.9))
 
             # terminal_value check
-            if self._parameter.get_terminal_value() is not None:
-                solution = self.get_best_solution()
-                if solution is not None and solution.get_value() <= self._parameter.get_terminal_value():
-                    ToolFunction.log('terminal function value reached')
-                    return self.get_best_solution()
+            # if self._parameter.get_terminal_value() is not None:
+            #     solution = self.get_best_solution()
+            #     if solution is not None and solution.get_value() <= self._parameter.get_terminal_value():
+            #         ToolFunction.log('terminal function value reached')
+            #         return self.get_best_solution()
 
             if self.i % self._parameter.update_q_frequent == 0:
                 self._objective.update_q_func()
@@ -165,6 +165,67 @@ class SRacosReEval(SRacos):
 
     def add_custom_solution(self, solution):
         if solution is not None:
+            for index, sol in enumerate(self._positive_data):
+                if sol.is_the_same(solution):
+                    print("[add_custom_solution] solution in positive data, value %s" % sol.get_value())
+                    self._positive_data[index] = solution
+                    self._best_solution = self._positive_data[0]
+                    return
+            for index, sol in enumerate(self._negative_data):
+                if sol.is_the_same(solution):
+                    print("[add_custom_solution] solution in negative data, value %s" % sol.get_value())
+                    bad_ele = self.replace(self._positive_data, sol, 'pos')
+                    self._negative_data[index] = bad_ele
+                    return
+            print("[add_custom_solution] new solution.")
             bad_ele = self.replace(self._positive_data, solution, 'pos')
             self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
+
+    def re_eval_positive_solution(self):
+        for solu in self._positive_data:
+            print("solution info: eval %s" %solu.get_value())
+            self._objective.eval(solu)
+        self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
+        # for i in range(5):
+        #     print("random sample solution.")
+        #     solution, distinct_flag = self.distinct_sample(self._objective.get_dim())
+        #     if distinct_flag:
+        #         self._objective.eval(solution)
+        #         bad_ele = self.replace(self._positive_data, solution, 'pos')
+        #         self.replace(self._negative_data, bad_ele, 'neg', 'RR')
+        print("---print positive solution----")
+        for i in range(len(self._positive_data)):
+            print("i : %s, value %s " %(i, self._positive_data[i].get_value()))
+        # print("---print negative solution----")
+        # for i in range(len(self._negative_data)):
+        #     print("i : %s, value %s " %(i, self._negative_data[i].get_value()))
+        print("----end----")
+
+    def re_test_solution(self, test_func):
+        diff = []
+        for solu in self._positive_data:
+            value_before = solu.get_value()
+            value_after = test_func(solu)
+            if value_after is None:
+                continue
+            else:
+                value_after = value_after * -1
+            print("[re_test_solution] before %s, after %s. " % (value_before, value_after))
+            diff.append(abs(value_after - value_before))
+
+        for solu in self._negative_data:
+            value_before = solu.get_value()
+            value_after = test_func(solu)
+            if value_after is None:
+                continue
+            else:
+                value_after = value_after * -1
+            print("[re_test_solution] before %s, after %s. " % (value_before, value_after))
+            diff.append(abs(value_after - value_before))
+        import numpy as np
+        diff_mean = np.array(diff).mean()
+        tester = self.get_objective().tester
+        tester.add_custom_record('avg_diff_solution', x=tester.time_step_holder.get_time(),
+                                      y=diff_mean,
+                                      x_name='time step', y_name='avg_diff_solution')

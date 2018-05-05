@@ -14,7 +14,7 @@ Author:
 
 class Opt:
 
-    def __init__(self, objective, parameter):
+    def __init__(self, objective, parameter, strategy='WR'):
         Opt.set_global(parameter)
         constraint = objective.get_constraint()
         algorithm = parameter.get_algorithm()
@@ -27,7 +27,7 @@ class Opt:
             self.optimizer = ParetoOptimization()
         elif constraint is None and ((algorithm is None) or (algorithm == "racos") or (algorithm == "sracos")) or (
                 algorithm == "ssracos"):
-            self.optimizer = RacosOptimization(self.objective, self.parameter)
+            self.optimizer = RacosOptimization(self.objective, self.parameter, strategy)
         else:
             ToolFunction.log(
                 "opt.py: No proper algorithm found for %s" % algorithm)

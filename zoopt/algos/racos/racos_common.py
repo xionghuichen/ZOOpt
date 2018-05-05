@@ -14,7 +14,7 @@ Author:
 
 class RacosCommon:
 
-    def __init__(self, parameter, objective, ub):
+    def __init__(self, objective, parameter, ub):
         self._parameter = parameter
         self._objective = objective
         self.ub = ub
@@ -56,7 +56,7 @@ class RacosCommon:
                     # x.set_value(-1 * ret)
                 i += 1
         # otherwise generate random solutions
-        iteration_num = self._parameter.get_init_size() # get_train_size()
+        iteration_num = self._parameter.get_train_size()
         while i < iteration_num:
             # distinct_flag: True means sample is distinct(can be use),
             # False means sample is distinct, you should sample again.

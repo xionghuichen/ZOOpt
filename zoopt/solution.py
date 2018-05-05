@@ -37,6 +37,9 @@ class Solution:
         post_attach = self.__post_attach
         return Solution(x, value, resample_value, attach, post_attach, self.is_in_possible_solution)
 
+    def is_the_same(self, sol):
+        return self.get_x() == sol.get_x()
+
     # Check if two solutions equal
     def is_equal(self, sol):
         sol_x = sol.get_x()
