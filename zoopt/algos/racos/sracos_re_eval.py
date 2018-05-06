@@ -167,40 +167,45 @@ class SRacosReEval(SRacos):
         if solution is not None:
             for index, sol in enumerate(self._positive_data):
                 if sol.is_the_same(solution):
-                    print("[add_custom_solution] solution in positive data, value %s" % sol.get_value())
+                    ToolFunction.log("[add_custom_solution] solution in positive data, value %s" % sol.get_value())
                     self._positive_data[index] = solution
+                    self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
                     self._best_solution = self._positive_data[0]
                     return
             for index, sol in enumerate(self._negative_data):
                 if sol.is_the_same(solution):
-                    print("[add_custom_solution] solution in negative data, value %s" % sol.get_value())
+                    ToolFunction.log("[add_custom_solution] solution in negative data, value %s" % sol.get_value())
                     bad_ele = self.replace(self._positive_data, sol, 'pos')
                     self._negative_data[index] = bad_ele
                     return
-            print("[add_custom_solution] new solution.")
+            ToolFunction.log("[add_custom_solution] new solution.")
             bad_ele = self.replace(self._positive_data, solution, 'pos')
             self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
 
     def re_eval_positive_solution(self):
         for solu in self._positive_data:
-            print("solution info: eval %s" %solu.get_value())
+            ToolFunction.log("solution info: eval %s" %solu.get_value())
             self._objective.eval(solu)
+            tester = self.get_objective().tester
+            tester.add_custom_record('re-eval-point',x=tester.time_step_holder.get_time(),
+                                          y=solu.get_value(),
+                                          x_name='time step', y_name='re-eval-point')
         self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
         # for i in range(5):
-        #     print("random sample solution.")
+        #     ToolFunction.log("random sample solution.")
         #     solution, distinct_flag = self.distinct_sample(self._objective.get_dim())
         #     if distinct_flag:
         #         self._objective.eval(solution)
         #         bad_ele = self.replace(self._positive_data, solution, 'pos')
         #         self.replace(self._negative_data, bad_ele, 'neg', 'RR')
-        print("---print positive solution----")
+        ToolFunction.log("---print positive solution----")
         for i in range(len(self._positive_data)):
-            print("i : %s, value %s " %(i, self._positive_data[i].get_value()))
-        # print("---print negative solution----")
+            ToolFunction.log("i : %s, value %s " %(i, self._positive_data[i].get_value()))
+        # ToolFunction.log("---print negative solution----")
         # for i in range(len(self._negative_data)):
-        #     print("i : %s, value %s " %(i, self._negative_data[i].get_value()))
-        print("----end----")
+        #     ToolFunction.log("i : %s, value %s " %(i, self._negative_data[i].get_value()))
+        ToolFunction.log("----end----")
 
     def re_test_solution(self, test_func):
         diff = []
@@ -211,7 +216,7 @@ class SRacosReEval(SRacos):
                 continue
             else:
                 value_after = value_after * -1
-            print("[re_test_solution] before %s, after %s. " % (value_before, value_after))
+            ToolFunction.log("[re_test_solution] before %s, after %s. " % (value_before, value_after))
             diff.append(abs(value_after - value_before))
 
         for solu in self._negative_data:
@@ -221,7 +226,7 @@ class SRacosReEval(SRacos):
                 continue
             else:
                 value_after = value_after * -1
-            print("[re_test_solution] before %s, after %s. " % (value_before, value_after))
+            ToolFunction.log("[re_test_solution] before %s, after %s. " % (value_before, value_after))
             diff.append(abs(value_after - value_before))
         import numpy as np
         diff_mean = np.array(diff).mean()

@@ -50,7 +50,7 @@ class Objective:
     def record_distance(self, new_solution):
 
         distance = np.linalg.norm(np.array(new_solution) - self.origin_solution)
-        print("[distance] %s" % distance)
+        ToolFunction.log("[distance] %s" % distance)
         self.tester.add_custom_record('distance', x=self.tester.time_step_holder.get_time(
         ), y=distance*200, x_name='time_step', y_name='distance')
     # evaluate the objective function of a solution
