@@ -25,6 +25,13 @@ class SRacosReEval(SRacos):
     def __init__(self, objective, parameter, strategy='WR', ub=1):
         self.strategy = strategy
         SRacos.__init__(self, objective, parameter, ub)
+        self.solution_counter = 0
+        self.init_data = self._parameter.get_init_samples()
+        self.current_not_distinct_times = 0
+        self.current_solution = None
+        self.non_update_times = 0
+        self.last_best = None
+        self.dont_early_stop = False
         return
 
     # SRacos's optimization function
@@ -43,7 +50,6 @@ class SRacosReEval(SRacos):
         dont_early_stop = False
         non_update_allowed = self._parameter.get_non_update_allowed()
         update_precision = self._parameter.get_max_stay_precision()
-        last_best = None
         non_update_times = 0
 
         while self.i < iteration_num:
@@ -159,6 +165,81 @@ class SRacosReEval(SRacos):
         else:
             return self.binary_search(iset, x, mid, end)
 
+    def generate_solution(self):
+        if self.solution_counter < len(self.init_data):
+            x = self._objective.construct_solution(self.init_data[self.solution_counter])
+        elif self.solution_counter < self._parameter.get_train_size():
+            x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
+                                                             data_num=self._parameter.get_train_size())
+            if x is None:
+                self.solution_counter = self._parameter.get_train_size()
+                return self.generate_solution()
+        else:
+            if gl.rand.random() < self._parameter.get_probability():
+                classifier = RacosClassification(
+                    self._objective.get_dim(), self._positive_data, self._negative_data, self.ub)
+                classifier.mixed_classification()
+                x, distinct_flag = self.distinct_sample_classifier(
+                    classifier, True, self._parameter.get_train_size())
+            else:
+                x, distinct_flag = self.distinct_sample(
+                    self._objective.get_dim())
+            # panic stop
+            if x is None:
+                ToolFunction.log(" [break loop] solution is None")
+                return self.get_best_solution()
+            if distinct_flag is False:
+                self.current_not_distinct_times += 1
+                if self.current_not_distinct_times >= 100:
+                    ToolFunction.log(
+                        "[break loop] distinct_flag is false too much times")
+                    return self.get_best_solution()
+                else:
+                    return self.generate_solution()
+        self.current_solution = x
+        return x
+
+    def update_racos_stats(self, solution_eval, attach):
+        assert isinstance(self.current_solution, Solution)
+        self.current_solution.set_value(solution_eval)
+        self.current_solution.set_post_attach(attach)
+        self.solution_counter += 1
+        if self.solution_counter < self._parameter.get_train_size():
+            # do nothing.
+            self._data.append(self.current_solution)
+        elif self.solution_counter == self._parameter.get_train_size():
+            self.selection(self._data)
+        else:
+            bad_ele = self.replace(self._positive_data, self.current_solution, 'pos')
+            self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
+            self._best_solution = self._positive_data[0]
+            if self.last_best is not None and self.last_best.get_value() - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()\
+                    and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value()):
+                self.non_update_times += 1
+                if self.non_update_times >= self._parameter.get_non_update_allowed():
+                    ToolFunction.log(
+                        "[break loop] because stay longer than max_stay_times, break loop")
+                    return self._best_solution
+            else:
+                self.non_update_times = 0
+                self.last_best = self._best_solution
+
+            # early stop
+            if self._parameter.early_stop is not None and not self.dont_early_stop:
+                if self.current_solution.get_value() < self._objective.return_before * 0.9:
+                    self.dont_early_stop = True
+                elif self.solution_counter - self.get_parameters().get_train_size() > self._parameter.early_stop:
+                    ToolFunction.log(
+                        '[break loop] early stop for too low value.')
+                    return self.get_best_solution()
+                ToolFunction.log(
+                    '[early stop warning ]: current iter %s , target %s. current value %s. target value %s' % (
+                        self.solution_counter - self.get_parameters().get_train_size(),
+                        self._parameter.early_stop, self.current_solution.get_value(), self._objective.return_before * 0.9))
+            ToolFunction.log('[iter log] i %s, non_update_times %s, non_update_allowed %s ' % (
+                self.solution_counter - self.get_parameters().get_train_size(),
+                self.non_update_times, self._parameter.get_non_update_allowed()))
+        return None
 
     def _is_worest(self, solution):
         return self._positive_data[-1].get_value() <= solution.get_value()
