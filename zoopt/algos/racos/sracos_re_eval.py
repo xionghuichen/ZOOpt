@@ -24,7 +24,7 @@ class SRacosReEval(SRacos):
 
     def __init__(self, objective, parameter, strategy='WR', ub=1):
         self.strategy = strategy
-        SRacos.__init__(self, objective, parameter, ub)
+        SRacos.__init__(self, objective, parameter, strategy, ub)
         self.solution_counter = 0
         self.init_data = self._parameter.get_init_samples()
         self.current_not_distinct_times = 0
@@ -167,14 +167,37 @@ class SRacosReEval(SRacos):
 
     def generate_solution(self):
         if self.solution_counter < len(self.init_data):
+            ToolFunction.log(" [generate_solution] init_data")
             x = self._objective.construct_solution(self.init_data[self.solution_counter])
         elif self.solution_counter < self._parameter.get_train_size():
-            x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
-                                                             data_num=self._parameter.get_train_size())
-            if x is None:
-                self.solution_counter = self._parameter.get_train_size()
-                return self.generate_solution()
+            if self._parameter.evaluate_negative_data:
+                x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
+                                                                 data_num=self._parameter.get_train_size())
+                if x is None:
+                    self.solution_counter = self._parameter.get_train_size()
+                    return self.generate_solution()
+            else:
+                if self.solution_counter < self._parameter.get_positive_size():
+                    ToolFunction.log(" [generate_solution] set positive data")
+                    x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
+                                                                     data_num=self._parameter.get_train_size())
+                    if x is None:
+                        self.solution_counter = self._parameter.get_train_size()
+                        return self.generate_solution()
+                else:
+                    ToolFunction.log(" [generate_solution] set negative data")
+                    for i in range(self.get_parameters().get_negative_size()):
+                        x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
+                                                                         data_num=self._parameter.get_train_size())
+                        x.set_value(999999)
+                        self._data.append(x)
+                        self.solution_counter += 1
+                    self.selection(self._data)
+                    self.print_all_solution()
+                    return self.generate_solution()
+
         else:
+            ToolFunction.log(" [generate_solution] generate by classfication")
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
                     self._objective.get_dim(), self._positive_data, self._negative_data, self.ub)
@@ -248,24 +271,45 @@ class SRacosReEval(SRacos):
         return self._positive_data[-1].get_value() <= solution.get_value()
 
     def add_custom_solution(self, solution):
+        found = False
         if solution is not None:
+            if self.solution_counter < self._parameter.get_train_size():
+                ToolFunction.log("[add_custom_solution] init not complete, just do nothing.")
+                return
             for index, sol in enumerate(self._positive_data):
                 if sol.is_the_same(solution):
                     ToolFunction.log("[add_custom_solution] solution in positive data, value %s" % sol.get_value())
                     self._positive_data[index] = solution
                     self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
                     self._best_solution = self._positive_data[0]
-                    return
+                    found = True
+                    break
             for index, sol in enumerate(self._negative_data):
                 if sol.is_the_same(solution):
                     ToolFunction.log("[add_custom_solution] solution in negative data, value %s" % sol.get_value())
                     bad_ele = self.replace(self._positive_data, solution, 'pos')
                     self._negative_data[index] = bad_ele
-                    return
-            ToolFunction.log("[add_custom_solution] new solution.")
-            bad_ele = self.replace(self._positive_data, solution, 'pos')
-            self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
-            self._best_solution = self._positive_data[0]
+                    found = True
+                    break
+            if not found:
+                ToolFunction.log("[add_custom_solution] new solution. value is %s" % solution.get_value())
+                bad_ele = self.replace(self._positive_data, solution, 'pos')
+                self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
+                ToolFunction.log("[replace solution]")
+                bad_ele.print_solution()
+                self._best_solution = self._positive_data[0]
+            if self.solution_counter % 5 == 0:
+                self.print_all_solution()
+
+    def print_all_solution(self):
+        ToolFunction.log("----print positive solution----")
+        for index, sol in enumerate(self._positive_data):
+            ToolFunction.log("[%s]" % str(index))
+            sol.print_solution()
+        ToolFunction.log("----print negative solution----")
+        for index, sol in enumerate(self._negative_data):
+            ToolFunction.log("[%s]" % str(index))
+            sol.print_solution()
 
     def re_eval_positive_solution(self):
         for solu in self._positive_data:
@@ -293,6 +337,9 @@ class SRacosReEval(SRacos):
         ToolFunction.log("----end----")
 
     def update_ub(self):
+        if not self.get_parameters().update_uncertain_bit:
+            ToolFunction.log("[update ub] don't update: %s" % self.ub)
+            return
         if self.non_update_times is None:
             return
         else:

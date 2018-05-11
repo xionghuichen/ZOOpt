@@ -60,6 +60,8 @@ class Parameter:
         self.early_stop = early_stop
         self.update_q_frequent = update_q_frequent
         self.re_eval_frequent = re_eval_frequent
+        self.update_uncertain_bit = True
+        self.evaluate_negative_data = False
         self.__init_size = init_size
         if budget != 0 and autoset is True:
             self.auto_set(budget)
