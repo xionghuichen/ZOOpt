@@ -168,11 +168,11 @@ class SRacosReEval(SRacos):
             return self.binary_search(iset, x, mid, end)
 
     def get_next_re_eval_solution(self):
-        from SLBDAO.explore_agent import ExploreModule
+        from SLBDAO.explore_agent import RacosHolder
         while self.re_eval_index < len(self._positive_data):
             solution = self._positive_data[self.re_eval_index]
             attach = solution.get_post_attach()
-            if ExploreModule.VAR_CONTENT in attach:
+            if RacosHolder.VAR_CONTENT in attach:
                 ToolFunction.log("[construct explore actor] use re-eval solution")
                 self.re_eval_index += 1
                 return solution
@@ -181,6 +181,8 @@ class SRacosReEval(SRacos):
                     "[WARNING][construct explore actor] solution %s, without var content. select next." % solution.get_x())
                 self.re_eval_index += 1
         self.in_re_eval_mode = False
+        # 这个mode只是标记RACOS是否继续产生re-eval的样本，而不是记录re-eval是否已经结束了，因为re-eval的结果还没传过来
+        self.end_re_eval_solution()
         solution = self.generate_solution()
         return solution
         # algorithm.end_re_eval_solution() # TODO 这里的sort只能改成每次进行了
@@ -218,6 +220,16 @@ class SRacosReEval(SRacos):
                     self.print_all_solution()
                     return self.generate_solution()
         else:
+            # in_re_eval_mode should only call once a time.
+            if not self.in_re_eval_mode and self.get_parameters().re_eval_solution and (self.non_update_times + 1) % int(
+                    self._parameter.get_non_update_allowed() / 1.5) == 0:
+                ToolFunction.log("[construct_next_explore_actor] do re-eval")
+                self.in_re_eval_mode = True
+                self.re_eval_index = 0
+                return self.get_next_re_eval_solution()
+            elif self.in_re_eval_mode:
+                ToolFunction.log("[construct_next_explore_actor] in re-eval. get next solution")
+                return self.get_next_re_eval_solution()
             ToolFunction.log(" [generate_solution] generate by classfication")
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
@@ -326,14 +338,16 @@ class SRacosReEval(SRacos):
                 self.print_all_solution()
 
     def set_re_eval_solution(self, solution):
+        ToolFunction.log("[set_re_eval_solution]")
         self.add_custom_solution(solution)
         tester = self.get_objective().tester
         tester.add_custom_record('re-eval-point', x=tester.time_step_holder.get_time(),
                                  y=abs(solution.get_value()),
                                  x_name='time step', y_name='re-eval-point')
+        self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
 
     def end_re_eval_solution(self):
-        self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
+
         ToolFunction.log("---print positive solution----")
         for i in range(len(self._positive_data)):
             ToolFunction.log("i : %s, value %s " % (i, self._positive_data[i].get_value()))
