@@ -226,6 +226,7 @@ class SRacosReEval(SRacos):
                 ToolFunction.log("[construct_next_explore_actor] do re-eval")
                 self.in_re_eval_mode = True
                 self.re_eval_index = 0
+                self.non_update_times += 1
                 return self.get_next_re_eval_solution()
             elif self.in_re_eval_mode:
                 ToolFunction.log("[construct_next_explore_actor] in re-eval. get next solution")
@@ -345,6 +346,7 @@ class SRacosReEval(SRacos):
                                  y=abs(solution.get_value()),
                                  x_name='time step', y_name='re-eval-point')
         self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
+
 
     def end_re_eval_solution(self):
 
