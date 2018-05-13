@@ -192,33 +192,32 @@ class SRacosReEval(SRacos):
             ToolFunction.log(" [generate_solution] init_data")
             x = self._objective.construct_solution(self.init_data[self.solution_counter])
         elif self.solution_counter < self._parameter.get_train_size():
-            if self.solution_counter < self._parameter.get_positive_size():
-                ToolFunction.log(" [generate_solution] set positive data")
+            if self._parameter.evaluate_negative_data:
                 x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
                                                                  data_num=self._parameter.get_train_size())
                 if x is None:
                     self.solution_counter = self._parameter.get_train_size()
                     return self.generate_solution()
             else:
-                ToolFunction.log(" [generate_solution] set negative data")
-                for i in range(self.get_parameters().get_negative_size()):
+                if self.solution_counter < self._parameter.get_positive_size():
+                    ToolFunction.log(" [generate_solution] set positive data")
                     x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
                                                                      data_num=self._parameter.get_train_size())
-                    x.set_value(999999)
-                    self._data.append(x)
-                    self.solution_counter += 1
-                self.selection(self._data)
-                self.print_all_solution()
-                return self.generate_solution()
-
+                    if x is None:
+                        self.solution_counter = self._parameter.get_train_size()
+                        return self.generate_solution()
+                else:
+                    ToolFunction.log(" [generate_solution] set negative data")
+                    for i in range(self.get_parameters().get_negative_size()):
+                        x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
+                                                                         data_num=self._parameter.get_train_size())
+                        x.set_value(999999)
+                        self._data.append(x)
+                        self.solution_counter += 1
+                    self.selection(self._data)
+                    self.print_all_solution()
+                    return self.generate_solution()
         else:
-            if not self.in_re_eval_mode and self.non_update_times + 1 % int(self._parameter.get_non_update_allowed() / 1.5) == 0:
-                self.in_re_eval_mode = True
-                self.re_eval_index = 0
-                return self.get_next_re_eval_solution()
-            elif self.in_re_eval_mode:
-                return self.get_next_re_eval_solution()
-
             ToolFunction.log(" [generate_solution] generate by classfication")
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
