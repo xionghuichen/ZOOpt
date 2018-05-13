@@ -107,7 +107,23 @@ class SRacos(RacosCommon):
         elif strategy == 'LM':
             best_sol = min(iset, key=lambda x: x.get_value())
             return self.strategy_lm(iset, best_sol, x)
+        elif strategy == 'RS':
+            self.replace_n(iset, x)
+        elif strategy == 'none':
+            ToolFunction.log('dont replace')
+        else:
+            raise NotImplementedError
 
+    def replace_n(self, iset, x):
+        len_iset = len(iset)
+        replace_index = gl.rand.randint(0, len_iset - 1)
+        replace_ele = iset[replace_index]
+        data = self._positive_data + self._negative_data
+        x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), data,
+                                                         data_num=1)
+        x.set_value(999999)
+        iset[replace_index] = x
+        return replace_ele
     # Find first element larger than x
     def binary_search(self, iset, x, begin, end):
         x_value = x.get_value()
