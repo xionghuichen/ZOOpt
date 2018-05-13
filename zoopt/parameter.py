@@ -64,6 +64,7 @@ class Parameter:
         self.update_uncertain_bit = True
         self.evaluate_negative_data = False
         self.__init_size = init_size
+        self.re_eval_solution = True
         if budget != 0 and autoset is True:
             self.auto_set(budget)
         return
