@@ -223,6 +223,7 @@ class SRacosReEval(SRacos):
             # in_re_eval_mode should only call once a time.
             if not self.in_re_eval_mode and self.get_parameters().re_eval_solution and (self.non_update_times + 1) % int(
                     self._parameter.get_non_update_allowed() / 1.5) == 0:
+                self.non_update_times += 1
                 ToolFunction.log("[construct_next_explore_actor] do re-eval")
                 self.in_re_eval_mode = True
                 self.re_eval_index = 0
