@@ -170,10 +170,10 @@ class SRacosReEval(SRacos):
 
     def get_next_re_eval_solution(self):
         from SLBDAO.explore_agent import RacosHolder
-        while self.re_eval_index < len(self._positive_data):
-            solution = self._positive_data[self.re_eval_index]
+        while self.re_eval_index < len(self.re_eval_solution_list):
+            solution = self.re_eval_solution_list[self.re_eval_index]
             attach = solution.get_post_attach()
-            if RacosHolder.VAR_CONTENT in attach:
+            if RacosHolder.VAR_CONTENT in attach: # this condition will skip baseline solution
                 ToolFunction.log("[construct explore actor] use re-eval solution")
                 self.re_eval_index += 1
                 idx = self.solution_counter
@@ -234,6 +234,7 @@ class SRacosReEval(SRacos):
                 ToolFunction.log("[construct_next_explore_actor] do re-eval")
                 self.in_re_eval_mode = True
                 self.re_eval_index = 0
+                self.re_eval_solution_list = self._positive_data.copy()
                 return self.get_next_re_eval_solution()
             elif self.in_re_eval_mode:
                 ToolFunction.log("[construct_next_explore_actor] in re-eval. get next solution")
