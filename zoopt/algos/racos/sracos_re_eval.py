@@ -34,6 +34,7 @@ class SRacosReEval(SRacos):
         self.in_re_eval_mode = False
         self.dont_early_stop = False
         self.need_restart = False
+        self.finish_init = False
         return
 
     # SRacos's optimization function
@@ -175,7 +176,8 @@ class SRacosReEval(SRacos):
             if RacosHolder.VAR_CONTENT in attach:
                 ToolFunction.log("[construct explore actor] use re-eval solution")
                 self.re_eval_index += 1
-                return solution
+                idx = self.solution_counter
+                return solution, idx
             else:
                 ToolFunction.log(
                     "[WARNING][construct explore actor] solution %s, without var content. select next." % solution.get_x())
@@ -183,18 +185,19 @@ class SRacosReEval(SRacos):
         self.in_re_eval_mode = False
         # 这个mode只是标记RACOS是否继续产生re-eval的样本，而不是记录re-eval是否已经结束了，因为re-eval的结果还没传过来
         self.end_re_eval_solution()
-        solution = self.generate_solution()
-        return solution
+        solution, idx = self.generate_solution()
+        return solution, idx
         # algorithm.end_re_eval_solution() # TODO 这里的sort只能改成每次进行了
 
         # return solution, False
 
     def generate_solution(self):
         if self.solution_counter < len(self.init_data):
-            ToolFunction.log(" [generate_solution] init_data")
+            ToolFunction.log(" [generate_solution] init_data . counter %s" % self.solution_counter)
             x = self._objective.construct_solution(self.init_data[self.solution_counter])
         elif self.solution_counter < self._parameter.get_train_size():
             if self._parameter.evaluate_negative_data:
+                ToolFunction.log(" [generate_solution] init_data random sampling. counter %s" % self.solution_counter)
                 x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
                                                                  data_num=self._parameter.get_train_size())
                 if x is None:
@@ -220,18 +223,22 @@ class SRacosReEval(SRacos):
                     self.print_all_solution()
                     return self.generate_solution()
         else:
+
+            if not self.finish_init:
+                ToolFunction.log(" [generate_solution][WARNING] didn't finish init yet: %s. " % self.solution_counter)
+                return None, None
             # in_re_eval_mode should only call once a time.
             if not self.in_re_eval_mode and self.get_parameters().re_eval_solution and (self.non_update_times + 1) % int(
                     self._parameter.get_non_update_allowed() / 1.5) == 0:
+                self.non_update_times += 1
                 ToolFunction.log("[construct_next_explore_actor] do re-eval")
                 self.in_re_eval_mode = True
                 self.re_eval_index = 0
-                self.non_update_times += 1
                 return self.get_next_re_eval_solution()
             elif self.in_re_eval_mode:
                 ToolFunction.log("[construct_next_explore_actor] in re-eval. get next solution")
                 return self.get_next_re_eval_solution()
-            ToolFunction.log(" [generate_solution] generate by classfication")
+            ToolFunction.log(" [generate_solution] generate by classfication. counter %s" % self.solution_counter)
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
                     self._objective.get_dim(), self._positive_data, self._negative_data, self.ub)
@@ -254,20 +261,23 @@ class SRacosReEval(SRacos):
                 else:
                     return self.generate_solution()
         # self.current_solution = x
-        return x
+        self.solution_counter += 1
+        post_index = self.solution_counter
 
-    def update_racos_stats(self, solution_eval, attach, feed_solution):
+        return x, post_index
+
+    def update_racos_stats(self, solution_eval, attach, feed_solution, idx):
         assert isinstance(feed_solution, Solution)
         feed_solution.set_value(solution_eval)
         feed_solution.set_post_attach(attach)
-        self.solution_counter += 1
-
-        if self.solution_counter < self._parameter.get_train_size():
+        ToolFunction.log("[update racos] idx %s. eval %s" % (idx, solution_eval))
+        if idx < self._parameter.get_train_size():
             # do nothing.
             self._data.append(feed_solution)
-        elif self.solution_counter == self._parameter.get_train_size():
+        elif idx == self._parameter.get_train_size():
             self._data.append(feed_solution)
             self.selection(self._data)
+            self.finish_init = True
         else:
             bad_ele = self.replace(self._positive_data, feed_solution, 'pos')
             self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
@@ -289,17 +299,17 @@ class SRacosReEval(SRacos):
             if self._parameter.early_stop is not None and not self.dont_early_stop:
                 if feed_solution.get_value() < self._objective.return_before * 0.9:
                     self.dont_early_stop = True
-                elif self.solution_counter - self.get_parameters().get_train_size() > self._parameter.early_stop:
+                elif idx - self.get_parameters().get_train_size() > self._parameter.early_stop:
                     ToolFunction.log(
                         '[break loop] early stop for too low value.')
                     self.need_restart = True
                     return self.get_best_solution()
                 ToolFunction.log(
-                    '[early stop warning ]: current iter %s , target %s. current value %s. target value %s' % (
-                        self.solution_counter - self.get_parameters().get_train_size(),
+                    '[early stop warning ]: current solution idx %s , target %s. current value %s. target value %s' % (
+                        idx - self.get_parameters().get_train_size(),
                         self._parameter.early_stop, feed_solution.get_value(), self._objective.return_before * 0.9))
-            ToolFunction.log('[iter log] i %s, non_update_times %s, non_update_allowed %s ' % (
-                self.solution_counter - self.get_parameters().get_train_size(),
+            ToolFunction.log('[iter log] idx %s, counter %s, non_update_times %s, non_update_allowed %s ' % (
+                idx - self.get_parameters().get_train_size(), self.solution_counter,
                 self.non_update_times, self._parameter.get_non_update_allowed()))
         return None
 
@@ -309,7 +319,7 @@ class SRacosReEval(SRacos):
     def add_custom_solution(self, solution):
         found = False
         if solution is not None:
-            if self.solution_counter < self._parameter.get_train_size():
+            if not self.finish_init:
                 ToolFunction.log("[add_custom_solution] init not complete, just do nothing.")
                 return
             for index, sol in enumerate(self._positive_data):
@@ -346,7 +356,6 @@ class SRacosReEval(SRacos):
                                  y=abs(solution.get_value()),
                                  x_name='time step', y_name='re-eval-point')
         self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
-
 
     def end_re_eval_solution(self):
 
