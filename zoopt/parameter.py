@@ -12,7 +12,6 @@ Author:
 
 
 class Parameter:
-
     # Users should set at least algorithm and budget
     # algorithm can be 'racos' or 'poss'
     # If algorithm is 'racos' and sequential is True, opt will invoke SRacos.opt(default)
@@ -65,6 +64,7 @@ class Parameter:
         self.evaluate_negative_data = False
         self.__init_size = init_size
         self.re_eval_solution = True
+        self.drop_re_eval = False
         if budget != 0 and autoset is True:
             self.auto_set(budget)
         return
