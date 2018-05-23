@@ -83,7 +83,8 @@ class SRacosReEval(SRacos):
             self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
             self.non_update_times = non_update_times
-            if self.last_best  is not None and self.last_best .get_value() - self._best_solution.get_value() <= update_precision and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value()):
+            if self.last_best is not None and self.last_best .get_value() - self._best_solution.get_value() <= update_precision and \
+                    (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value()):
                 non_update_times += 1
                 if non_update_times >= non_update_allowed:
                     ToolFunction.log(
@@ -294,25 +295,31 @@ class SRacosReEval(SRacos):
             self.finish_init = True
         else:
             bad_ele = self.replace(self._positive_data, feed_solution, 'pos')
+            ToolFunction.log("replace solution value: %s, x:%s" % (bad_ele.get_value(), bad_ele.get_x()))
             self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
             self.update_ub()
             if self.last_best is not None and self.last_best.get_value() - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()\
                     and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value()):
                 self.non_update_times += 1
+                ToolFunction.log(
+                    "last best %s , current best %s. non update++" % (self.last_best.get_value(), self._best_solution.get_value()))
                 if self.non_update_times >= self._parameter.get_non_update_allowed():
                     ToolFunction.log(
                         "[break loop] because stay longer than max_stay_times, break loop")
                     self.need_restart = True
                     return self._best_solution
             else:
+                if self.last_best is not None:
+                    ToolFunction.log(
+                        "last best %s , current best %s. non update/2" % (self.last_best.get_value(), self._best_solution.get_value()))
                 self.non_update_times = int(self.non_update_times / 2)
-                self.last_best = self._best_solution
+            self.last_best = self._best_solution
 
             # early stop
             if self._parameter.early_stop is not None and not self.dont_early_stop:
                 if feed_solution.get_value() < self._objective.return_before * 0.99 \
-                        if self._objective.return_before > 0 else self._objective.return_before * 1.01:
+                        if self._objective.return_before < 0 else self._objective.return_before * 1.01:
                     self.dont_early_stop = True
                 elif idx - self.get_parameters().get_train_size() > self._parameter.early_stop:
                     ToolFunction.log(
@@ -340,7 +347,8 @@ class SRacosReEval(SRacos):
             for index, sol in enumerate(self._positive_data):
                 if sol.is_the_same(solution):
                     ToolFunction.log("[add_custom_solution] solution in positive data, value %s" % sol.get_value())
-                    self._positive_data[index] = solution
+                    sol.set_value(solution.get_value())
+                    # self._positive_data[index] = solution
                     self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
                     self._best_solution = self._positive_data[0]
                     found = True
