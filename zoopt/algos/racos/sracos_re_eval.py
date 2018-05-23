@@ -311,7 +311,8 @@ class SRacosReEval(SRacos):
 
             # early stop
             if self._parameter.early_stop is not None and not self.dont_early_stop:
-                if feed_solution.get_value() < self._objective.return_before * 0.99:
+                if feed_solution.get_value() < self._objective.return_before * 0.99 \
+                        if self._objective.return_before > 0 else self._objective.return_before * 1.01:
                     self.dont_early_stop = True
                 elif idx - self.get_parameters().get_train_size() > self._parameter.early_stop:
                     ToolFunction.log(
@@ -359,7 +360,7 @@ class SRacosReEval(SRacos):
                 bad_ele.print_solution()
             self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
             self._best_solution = self._positive_data[0]
-            self.last_best = self._best_solution
+            # self.last_best = self._best_solution
             if self.solution_counter % 5 == 0:
                 self.print_all_solution()
 
@@ -372,7 +373,7 @@ class SRacosReEval(SRacos):
                                  x_name='time step', y_name='re-eval-point')
         self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
         self._best_solution = self._positive_data[0]
-        self.last_best = self._positive_data[0]
+        # self.last_best = self._positive_data[0]
 
     def end_re_eval_solution(self):
 
