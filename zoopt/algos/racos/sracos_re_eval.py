@@ -318,6 +318,7 @@ class SRacosReEval(SRacos):
 
             # early stop
             if self._parameter.early_stop is not None and not self.dont_early_stop:
+                # 当前的solution value 应该小于某一个阈值,这个阈值应该比上一次的opt得到的return更容易达到.所以我们需要让return_before向大的方向移动.
                 if feed_solution.get_value() < self._objective.return_before * 0.99 \
                         if self._objective.return_before < 0 else self._objective.return_before * 1.01:
                     self.dont_early_stop = True
@@ -377,7 +378,7 @@ class SRacosReEval(SRacos):
         self.add_custom_solution(solution)
         tester = self.get_objective().tester
         tester.add_custom_record('re-eval-point', x=tester.time_step_holder.get_time(),
-                                 y=abs(solution.get_value()),
+                                 y=solution.get_value(),
                                  x_name='time step', y_name='re-eval-point')
         self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
         self._best_solution = self._positive_data[0]
