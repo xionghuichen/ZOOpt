@@ -25,6 +25,7 @@ class SRacosReEval(SRacos):
     def __init__(self, objective, parameter, strategy='WR', ub=1):
         self.strategy = strategy
         SRacos.__init__(self, objective, parameter, strategy, ub)
+        self.init_ub = ub
         self.solution_counter = 0
         self.init_data = self._parameter.get_init_samples()
         self.current_not_distinct_times = 0
@@ -299,11 +300,14 @@ class SRacosReEval(SRacos):
             self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
             self.update_ub()
-            if self.last_best is not None and self.last_best.get_value() - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()\
+            if self.last_best is not None and \
+                    self.last_best.get_value() - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()\
                     and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value()):
                 self.non_update_times += 1
                 ToolFunction.log(
-                    "last best %s , current best %s. non update++" % (self.last_best.get_value(), self._best_solution.get_value()))
+                    "last best %s , current best %s. precision %s, non update++" % (self.last_best.get_value(),
+                                                                                    self._best_solution.get_value(),
+                                                                                    self._parameter.get_max_stay_precision(),))
                 if self.non_update_times >= self._parameter.get_non_update_allowed():
                     ToolFunction.log(
                         "[break loop] because stay longer than max_stay_times, break loop")
@@ -312,7 +316,9 @@ class SRacosReEval(SRacos):
             else:
                 if self.last_best is not None:
                     ToolFunction.log(
-                        "last best %s , current best %s. non update/2" % (self.last_best.get_value(), self._best_solution.get_value()))
+                        "last best %s , current best %s. precision %s, non update/2" % (self.last_best.get_value(),
+                                                                                        self._best_solution.get_value(),
+                                                                                        self._parameter.get_max_stay_precision()))
                 self.non_update_times = int(self.non_update_times / 2)
             self.last_best = self._best_solution
 
