@@ -93,23 +93,11 @@ class Parameter:
         elif budget <= 1000:
             self.__train_size = 12
             self.__positive_size = 2
-        else:  # budget <= 2500:
+        else:
             self.__train_size = 22
             self.__positive_size = 2  # origin
         if self.__init_size is None:
             self.__init_size = self.__train_size
-        # else:
-        #     self.__train_size = 36
-        #     self.__positive_size = 4
-        # else:  # if # budget <= 5000:
-            # self.__train_size = 36
-            # self.__positive_size = 4
-        # elif budget < 10000:
-        #     self.__train_size = 56
-        #     self.__positive_size = 6
-        # else:
-        #     self.__train_size = 76
-        #     self.__positive_size = 8
 
         self.__negative_size = self.__train_size - self.__positive_size
 

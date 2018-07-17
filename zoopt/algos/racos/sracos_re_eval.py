@@ -206,6 +206,7 @@ class SRacosReEval(SRacos):
                     self.solution_counter = self._parameter.get_train_size()
                     return self.generate_solution()
             else:
+                assert False
                 if self.solution_counter < self._parameter.get_positive_size():
                     ToolFunction.log(" [generate_solution] set positive data")
                     x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
@@ -236,7 +237,7 @@ class SRacosReEval(SRacos):
                 ToolFunction.log("[construct_next_explore_actor] do re-eval")
                 self.in_re_eval_mode = True
                 self.re_eval_index = 0
-                self.print_all_solution()
+
                 if self._parameter.drop_re_eval:
                     for sol in self._positive_data:
                         sol.set_value(self._objective.return_before * 0.9 if self._objective.return_before < 0 else self._objective.return_before * 1.1)
@@ -340,6 +341,8 @@ class SRacosReEval(SRacos):
             ToolFunction.log('[iter log] idx %s - %s, counter %s, non_update_times %s, non_update_allowed %s ' % (
                 idx, self.get_parameters().get_train_size(), self.solution_counter,
                 self.non_update_times, self._parameter.get_non_update_allowed()))
+            if self.solution_counter % 20 <= 3:
+                self.print_all_solution()
         return None
 
     def _is_worest(self, solution):
@@ -376,15 +379,15 @@ class SRacosReEval(SRacos):
             self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
             self._best_solution = self._positive_data[0]
             # self.last_best = self._best_solution
-            if self.solution_counter % 5 == 0:
-                self.print_all_solution()
+            # if self.solution_counter % 5 == 0:
+            #     self.print_all_solution()
 
     def set_re_eval_solution(self, solution):
         ToolFunction.log("[set_re_eval_solution]")
         self.add_custom_solution(solution)
         tester = self.get_objective().tester
         tester.add_custom_record('re-eval-point', x=tester.time_step_holder.get_time(),
-                                 y=solution.get_value(),
+                                 y=solution.get_value() * -1,
                                  x_name='time step', y_name='re-eval-point')
         self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
         self._best_solution = self._positive_data[0]
@@ -402,10 +405,15 @@ class SRacosReEval(SRacos):
         for index, sol in enumerate(self._positive_data):
             ToolFunction.log("[%s]" % str(index))
             sol.print_solution()
-        ToolFunction.log("----print negative solution----")
-        for index, sol in enumerate(self._negative_data):
-            ToolFunction.log("[%s]" % str(index))
-            sol.print_solution()
+        if self.strategy == 'none' and self.solution_counter % 100 == 0:
+            ToolFunction.log("----print negative solution----")
+            for index, sol in enumerate(self._negative_data):
+                ToolFunction.log("[%s]" % str(index))
+                sol.print_solution()
+        elif self.strategy != 'none':
+            for index, sol in enumerate(self._negative_data):
+                ToolFunction.log("[%s]" % str(index))
+                sol.print_solution()
 
     def re_eval_positive_solution(self):
         for solu in self._positive_data:
