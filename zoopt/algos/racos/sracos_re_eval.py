@@ -297,7 +297,8 @@ class SRacosReEval(SRacos):
             self.finish_init = True
         else:
             bad_ele = self.replace(self._positive_data, feed_solution, 'pos')
-            ToolFunction.log("replace solution value: %s, x:%s" % (bad_ele.get_value(), bad_ele.get_x()))
+            bad_ele.print_solution(record=False)
+            # ToolFunction.log("replace solution value: %s, x:%s" % (bad_ele.get_value(), bad_ele.get_x()))
             self.replace(self._negative_data, bad_ele, 'neg', self.strategy)
             self._best_solution = self._positive_data[0]
             self.update_ub()
@@ -341,8 +342,8 @@ class SRacosReEval(SRacos):
             ToolFunction.log('[iter log] idx %s - %s, counter %s, non_update_times %s, non_update_allowed %s ' % (
                 idx, self.get_parameters().get_train_size(), self.solution_counter,
                 self.non_update_times, self._parameter.get_non_update_allowed()))
-            if self.solution_counter % 20 <= 3:
-                self.print_all_solution()
+            if self.solution_counter % 10 <= 3:
+                self.print_all_solution(record=True)
         return None
 
     def _is_worest(self, solution):
@@ -394,26 +395,25 @@ class SRacosReEval(SRacos):
         # self.last_best = self._positive_data[0]
 
     def end_re_eval_solution(self):
-
         ToolFunction.log("---print positive solution----")
         for i in range(len(self._positive_data)):
             ToolFunction.log("i : %s, value %s " % (i, self._positive_data[i].get_value()))
         ToolFunction.log("----end----")
 
-    def print_all_solution(self):
+    def print_all_solution(self, record=False):
         ToolFunction.log("----print positive solution----")
         for index, sol in enumerate(self._positive_data):
             ToolFunction.log("[%s]" % str(index))
-            sol.print_solution()
+            sol.print_solution(record)
         if self.strategy == 'none' and self.solution_counter % 100 == 0:
             ToolFunction.log("----print negative solution----")
             for index, sol in enumerate(self._negative_data):
                 ToolFunction.log("[%s]" % str(index))
-                sol.print_solution()
+                sol.print_solution(record)
         elif self.strategy != 'none':
             for index, sol in enumerate(self._negative_data):
                 ToolFunction.log("[%s]" % str(index))
-                sol.print_solution()
+                sol.print_solution(record)
 
     def re_eval_positive_solution(self):
         for solu in self._positive_data:

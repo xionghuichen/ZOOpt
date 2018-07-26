@@ -102,9 +102,30 @@ class Solution:
     def get_attach(self):
         return self.__attach
 
-    def print_solution(self):
-        ToolFunction.log('x: ' + repr(self.__x))
-        ToolFunction.log('value: ' + repr(self.__value))
+    def print_solution(self, record=False):
+        from baselines import logger
+        import numpy as np
+        x = np.array(self.__x)
+        min_x = np.min(x)
+        max_x = np.max(x)
+        mean_x = np.mean(x)
+        std_x = np.std(x)
+        value = self.__value
+        ToolFunction.log('value: %s, min_x: %s, max_x: %s, mean_x %s, std_x %s' %(
+            value, min_x, max_x, mean_x, std_x
+        ))
+        if record:
+            logger.record_tabular("solution/value", value)
+            logger.record_tabular("solution/min_x", min_x)
+            logger.record_tabular("solution/max_x", max_x)
+            logger.record_tabular("solution/mean_x", mean_x)
+            logger.record_tabular("solution/std_x", std_x)
+            logger.dump_tabular()
+        return value, min_x, max_x, mean_x, std_x
+
+
+        # ToolFunction.log('x: ' + repr(self.__x))
+        # ToolFunction.log('value: ' + repr(self.__value))
 
     # Deep copy an solution set
     @staticmethod
