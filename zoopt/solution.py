@@ -111,8 +111,8 @@ class Solution:
         mean_x = np.mean(x)
         std_x = np.std(x)
         value = self.__value
-        ToolFunction.log('value: %s, min_x: %s, max_x: %s, mean_x %s, std_x %s' %(
-            value, min_x, max_x, mean_x, std_x
+        ToolFunction.log('value: %s, min_x: %s, max_x: %s, mean_x %s, std_x %s. hp %s' %(
+            value, min_x, max_x, mean_x, std_x, x[-1]
         ))
         if record:
             logger.record_tabular("solution/value", value)
@@ -120,6 +120,7 @@ class Solution:
             logger.record_tabular("solution/max_x", max_x)
             logger.record_tabular("solution/mean_x", mean_x)
             logger.record_tabular("solution/std_x", std_x)
+            logger.record_tabular("solution/hp", x[-1])
             logger.dump_tabular()
         return value, min_x, max_x, mean_x, std_x
 

@@ -13,7 +13,7 @@ Author:
 
 class RacosClassification:
 
-    def __init__(self, dim, positive, negative, ub=1):
+    def __init__(self, dim, positive, negative, must_select_index, ub=1):
         self.__solution_space = dim
         self.__sample_region = []
         self.__label = []
@@ -22,6 +22,7 @@ class RacosClassification:
         self.__negative_solution = negative
         self.__x_positive = None
         self.__uncertain_bit = ub
+        self.must_select_index = must_select_index
 
         regions = dim.get_regions()
         for i in range(dim.get_size()):
@@ -45,9 +46,18 @@ class RacosClassification:
             0, len(self.__positive_solution) - 1)]
         len_negative = len(self.__negative_solution)
         index_set = list(range(self.__solution_space.get_size()))
+        import copy
+        must_select_index = copy.copy(self.must_select_index)
+        for i in must_select_index:
+            index_set.remove(i)
         types = self.__solution_space.get_types()
+        max_select_index_counter = 0
         while len_negative > 0:
-            k = index_set[gl.rand.randint(0, len(index_set) - 1)]
+            if max_select_index_counter < len(must_select_index):
+                k = must_select_index[max_select_index_counter]
+                max_select_index_counter += 1
+            else:
+                k = index_set[gl.rand.randint(0, len(index_set) - 1)]
             x_pos_k = self.__x_positive.get_x_index(k)
             # continuous
             if types[k] is True:
@@ -94,17 +104,22 @@ class RacosClassification:
                     else:
                         i += 1
                 if delete != 0:
-                    index_set.remove(k)
-        self.set_uncertain_bit(index_set)
+                    if len(must_select_index) > 0:
+                        must_select_index.remove(k)
+                    else:
+                        index_set.remove(k) # 从离散数据中无法铜鼓负例来约束该特征的取值范围，则将其标记为确定位
+        self.set_uncertain_bit(index_set, must_select_index)
         return
 
     # Choose uncertain bits from iset
-    def set_uncertain_bit(self, iset):
+    def set_uncertain_bit(self, iset, must_select_index):
         index_set = iset
         for i in range(self.__uncertain_bit):
             index = index_set[gl.rand.randint(0, len(index_set) - 1)]
-            self.__label[index] = True
+            self.__label[index] = True # 随机选择不确定位，label用于标记这一位要进行随机选择
             index_set.remove(index)
+        for i in must_select_index:
+            self.__label[i] = True
         return
 
     # Random sample from self.__solution_space.get_dim()

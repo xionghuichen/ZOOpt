@@ -36,6 +36,7 @@ class SRacosReEval(SRacos):
         self.dont_early_stop = False
         self.need_restart = False
         self.finish_init = False
+        self.must_select_index = self._parameter.must_select_index
         return
 
     # SRacos's optimization function
@@ -258,7 +259,7 @@ class SRacosReEval(SRacos):
             ToolFunction.log(" [generate_solution] generate by classfication. counter %s" % self.solution_counter)
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
-                    self._objective.get_dim(), self._positive_data, self._negative_data, self.ub)
+                    self._objective.get_dim(), self._positive_data, self._negative_data, self.must_select_index, self.ub)
                 classifier.mixed_classification()
                 x, distinct_flag = self.distinct_sample_classifier(
                     classifier, True, self._parameter.get_train_size())
