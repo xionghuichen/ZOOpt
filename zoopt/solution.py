@@ -102,25 +102,32 @@ class Solution:
     def get_attach(self):
         return self.__attach
 
-    def print_solution(self, record=False):
+    def print_solution(self, record=False, name='solution'):
         from baselines import logger
         import numpy as np
         x = np.array(self.__x)
-        min_x = np.min(x)
-        max_x = np.max(x)
-        mean_x = np.mean(x)
-        std_x = np.std(x)
+        x_2 = x[:-1]
+        min_x = np.min(x_2)
+        max_x = np.max(x_2)
+        mean_x = np.mean(x_2)
+        std_x = np.std(x_2)
         value = self.__value
-        ToolFunction.log('value: %s, min_x: %s, max_x: %s, mean_x %s, std_x %s. hp %s' %(
-            value, min_x, max_x, mean_x, std_x, x[-1]
+        ToolFunction.log('value: %s, min_x: %s, max_x: %s, mean_x %s, std_x %s. hp %s\n'
+                         'scalar: min_x: %s, max_x: %s, mean_x %s, std_x %s.' %(
+            value, min_x, max_x, mean_x, std_x, x[-1],
+            min_x* x[-1], max_x* x[-1], mean_x* x[-1], std_x* x[-1],
         ))
         if record:
-            logger.record_tabular("solution/value", value)
-            logger.record_tabular("solution/min_x", min_x)
-            logger.record_tabular("solution/max_x", max_x)
-            logger.record_tabular("solution/mean_x", mean_x)
-            logger.record_tabular("solution/std_x", std_x)
-            logger.record_tabular("solution/hp", x[-1])
+            logger.record_tabular(name+"/value", value)
+            logger.record_tabular(name+"/min_x", min_x)
+            logger.record_tabular(name+"/max_x", max_x)
+            logger.record_tabular(name+"/mean_x", mean_x)
+            logger.record_tabular(name+"/std_x", std_x)
+            logger.record_tabular(name+"/scalar_min_x", min_x * x[-1])
+            logger.record_tabular(name+"/scalar_max_x", max_x * x[-1])
+            logger.record_tabular(name+"/scalar_mean_x", mean_x * x[-1])
+            logger.record_tabular(name+"/scalar_std_x", std_x * x[-1])
+            logger.record_tabular(name+"/hp", x[-1])
             logger.dump_tabular()
         return value, min_x, max_x, mean_x, std_x
 
