@@ -31,6 +31,8 @@ class SRacosReEval(SRacos):
         self.current_not_distinct_times = 0
         self.current_solution = None
         self.non_update_times = 0
+        self.non_update_times_cumulative = 0
+        self.last_times_update_success = False
         self.last_best = None
         self.in_re_eval_mode = False
         self.dont_early_stop = False
@@ -207,7 +209,6 @@ class SRacosReEval(SRacos):
                     self.solution_counter = self._parameter.get_train_size()
                     return self.generate_solution()
             else:
-                assert False
                 if self.solution_counter < self._parameter.get_positive_size():
                     ToolFunction.log(" [generate_solution] set positive data")
                     x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
@@ -225,6 +226,7 @@ class SRacosReEval(SRacos):
                         self.solution_counter += 1
                     self.selection(self._data)
                     self.print_all_solution()
+                    self.finish_init = True
                     return self.generate_solution()
         else:
 
@@ -306,25 +308,45 @@ class SRacosReEval(SRacos):
             self._best_solution = self._positive_data[0]
             self.update_ub()
             if self.last_best is not None and \
-                    self.last_best.get_value() - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()\
-                    and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value()):
-                self.non_update_times += 1
+                    (self.last_best.get_value() - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()\
+                    # and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value())\
+                    or self._objective.return_before - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()):
+                if not self.last_times_update_success:
+                    self.non_update_times_cumulative += 1
+                else:
+                    self.last_times_update_success = False
+                    self.non_update_times_cumulative = 1
+                self.non_update_times += 1# self.non_update_times_cumulative
                 ToolFunction.log(
-                    "last best %s , current best %s. precision %s, non update++" % (self.last_best.get_value(),
+                    "last best %s , current best %s. on_policy_ret %s, precision %s, non update cumulative %s" % (self.last_best.get_value(),
                                                                                     self._best_solution.get_value(),
-                                                                                    self._parameter.get_max_stay_precision(),))
+                                                                                    self._objective.return_before,
+                                                                                    self._parameter.get_max_stay_precision(),
+                                                                                    self.non_update_times_cumulative))
                 if self.non_update_times >= self._parameter.get_non_update_allowed():
                     ToolFunction.log(
                         "[break loop] because stay longer than max_stay_times, break loop")
                     self.need_restart = True
                     return self._best_solution
             else:
+                if self.last_times_update_success:
+                    self.non_update_times_cumulative += 1
+                else:
+                    self.last_times_update_success = True
+                    self.non_update_times_cumulative = 1
+                self.non_update_times /= 2
+                # self.non_update_times -= self.non_update_times_cumulative
+                if self.non_update_times < 0:
+                    self.non_update_times = 0
                 if self.last_best is not None:
                     ToolFunction.log(
-                        "last best %s , current best %s. precision %s, non update/2" % (self.last_best.get_value(),
+                        "last best %s , current best %s. on_policy_ret %s, precision %s, non update cumulative %s. " % (
+                                                                                        self.last_best.get_value(),
                                                                                         self._best_solution.get_value(),
-                                                                                        self._parameter.get_max_stay_precision()))
-                self.non_update_times = int(self.non_update_times / 2)
+                                                                                        self._objective.return_before,
+                                                                                        self._parameter.get_max_stay_precision(),
+                                                                                        self.non_update_times_cumulative))
+
             self.last_best = self._best_solution
 
             # early stop
@@ -353,6 +375,13 @@ class SRacosReEval(SRacos):
         return self._positive_data[-1].get_value() <= solution.get_value()
 
     def add_custom_solution(self, solution):
+        """
+        目前使用场景记录
+        1. 在baseline solution 增加的时候使用
+        2. 在设置re-eval 的value的时候使用
+        :param solution:
+        :return:
+        """
         found = False
         if solution is not None:
             if not self.finish_init:
@@ -382,6 +411,7 @@ class SRacosReEval(SRacos):
                 bad_ele.print_solution()
             self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
             self._best_solution = self._positive_data[0]
+            self.last_best = self._best_solution
             # self.last_best = self._best_solution
             # if self.solution_counter % 5 == 0:
             #     self.print_all_solution()
@@ -414,6 +444,7 @@ class SRacosReEval(SRacos):
                 ToolFunction.log("[%s]" % str(index))
                 sol.print_solution(False, name=name)
         elif self.strategy != 'none':
+            ToolFunction.log("----print negative solution----")
             for index, sol in enumerate(self._negative_data):
                 ToolFunction.log("[%s]" % str(index))
                 sol.print_solution(record, name=name)

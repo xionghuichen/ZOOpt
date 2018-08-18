@@ -6,6 +6,7 @@ from zoopt.algos.racos.racos_classification import RacosClassification
 from zoopt.algos.racos.racos_common import RacosCommon
 from zoopt.utils.zoo_global import gl
 from zoopt.utils.tool_function import ToolFunction
+from random import shuffle
 """
 The class SRacos represents SRacos algorithm. It's inherited from RacosCommon.
 
@@ -100,6 +101,30 @@ class SRacos(RacosCommon):
         return self._best_solution
 
     def replace(self, iset, x, iset_type, strategy='WR'):
+
+        if self.get_parameters().distance_replace:
+            from baselines import logger
+            _, dis = self.get_parameters().replace_func(x)
+            avg_dis_norm = []
+            found = False
+            random_index = list(range(len(iset)))
+            shuffle(random_index)
+            for index in random_index:
+                replace, norm = self.get_parameters().replace_func(iset[index])
+                avg_dis_norm.append(norm)
+                ToolFunction.log('[distance_replace %s] dis %s, norm %s' %(iset_type, dis, norm))
+                logger.record_tabular('distance', norm)
+                logger.dump_tabular()
+                if replace and dis < norm:
+                    sol = iset[index]
+                    iset[index] = x
+                    found = True
+                    ToolFunction.log("[replace success]")
+                    break
+            if found:
+                return sol
+            else:
+                ToolFunction.log('not found for distance solution')
         if strategy == 'WR':
             return self.strategy_wr(iset, x, iset_type)
         elif strategy == 'RR':
@@ -124,6 +149,7 @@ class SRacos(RacosCommon):
         x.set_value(999999)
         iset[replace_index] = x
         return replace_ele
+
     # Find first element larger than x
     def binary_search(self, iset, x, begin, end):
         x_value = x.get_value()
@@ -146,16 +172,16 @@ class SRacos(RacosCommon):
             iset.insert(index, x)
             worst_ele = iset.pop()
         else:
-                worst_ele, worst_index = Solution.find_maximum(iset)
-                if worst_ele.get_value() > x.get_value():
-                    if len(iset) < self._parameter.get_max_neg_size():
-                        iset.append(x)
-                    else:
-                        iset[worst_index] = x
+            worst_ele, worst_index = Solution.find_maximum(iset)
+            if worst_ele.get_value() > x.get_value():
+                if len(iset) < self._parameter.get_max_neg_size():
+                    iset.append(x)
                 else:
-                    if len(iset) < self._parameter.get_max_neg_size():
-                        iset.append(x)
-                    worst_ele = x
+                    iset[worst_index] = x
+            else:
+                if len(iset) < self._parameter.get_max_neg_size():
+                    iset.append(x)
+                worst_ele = x
         return worst_ele
 
     # Random replace

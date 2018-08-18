@@ -65,6 +65,8 @@ class Parameter:
         self.__init_size = init_size
         self.re_eval_solution = True
         self.drop_re_eval = False
+        self.distance_replace = False
+        self.replace_func = lambda x: False
         if budget != 0 and autoset is True:
             self.auto_set(budget)
         return
