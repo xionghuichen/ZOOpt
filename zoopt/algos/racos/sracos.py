@@ -1,4 +1,5 @@
 
+import numpy as np
 import time
 import numpy
 from zoopt.solution import Solution
@@ -13,7 +14,6 @@ The class SRacos represents SRacos algorithm. It's inherited from RacosCommon.
 Author:
     Yuren Liu
 """
-
 
 class SRacos(RacosCommon):
 
@@ -102,7 +102,7 @@ class SRacos(RacosCommon):
 
     def replace(self, iset, x, iset_type, strategy='WR'):
 
-        if self.get_parameters().distance_replace:
+        if self.get_parameters().distance_replace and strategy != 'none':
             from baselines import logger
             _, dis = self.get_parameters().replace_func(x)
             avg_dis_norm = []
@@ -121,9 +121,12 @@ class SRacos(RacosCommon):
                     found = True
                     ToolFunction.log("[replace success]")
                     break
+            logger.record_tabular('distance/rep_freq', np.mean(self._parameter.replace_frequent))
             if found:
+                self._parameter.replace_frequent.append(1)
                 return sol
             else:
+                self._parameter.replace_frequent.append(0)
                 ToolFunction.log('not found for distance solution')
         if strategy == 'WR':
             return self.strategy_wr(iset, x, iset_type)

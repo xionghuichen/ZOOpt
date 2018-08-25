@@ -102,7 +102,7 @@ class Solution:
     def get_attach(self):
         return self.__attach
 
-    def print_solution(self, record=False, name='solution'):
+    def print_solution(self, parameter, record=False, name='solution'):
         from baselines import logger
         import numpy as np
         x = np.array(self.__x)
@@ -111,11 +111,15 @@ class Solution:
         max_x = np.max(x_2)
         mean_x = np.mean(x_2)
         std_x = np.std(x_2)
+        if parameter.expon_explore_rate:
+            hp =  10 ** x[-1]
+        else:
+            hp = x[-1]
         value = self.__value
         ToolFunction.log('value: %s, min_x: %s, max_x: %s, mean_x %s, std_x %s. hp %s\n'
                          'scalar: min_x: %s, max_x: %s, mean_x %s, std_x %s.' %(
-            value, min_x, max_x, mean_x, std_x, x[-1],
-            min_x* x[-1], max_x* x[-1], mean_x* x[-1], std_x* x[-1],
+            value, min_x, max_x, mean_x, std_x, hp,
+            min_x* hp, max_x* hp, mean_x* hp, std_x* hp,
         ))
         if record:
             logger.record_tabular(name+"/value", value)
@@ -123,11 +127,11 @@ class Solution:
             logger.record_tabular(name+"/max_x", max_x)
             logger.record_tabular(name+"/mean_x", mean_x)
             logger.record_tabular(name+"/std_x", std_x)
-            logger.record_tabular(name+"/scalar_min_x", min_x * x[-1])
-            logger.record_tabular(name+"/scalar_max_x", max_x * x[-1])
-            logger.record_tabular(name+"/scalar_mean_x", mean_x * x[-1])
-            logger.record_tabular(name+"/scalar_std_x", std_x * x[-1])
-            logger.record_tabular(name+"/hp", x[-1])
+            logger.record_tabular(name+"/scalar_min_x", min_x * hp)
+            logger.record_tabular(name+"/scalar_max_x", max_x * hp)
+            logger.record_tabular(name+"/scalar_mean_x", mean_x * hp)
+            logger.record_tabular(name+"/scalar_std_x", std_x * hp)
+            logger.record_tabular(name + "/hp", hp)
             logger.dump_tabular()
         return value, min_x, max_x, mean_x, std_x
 
