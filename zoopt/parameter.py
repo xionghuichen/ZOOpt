@@ -64,11 +64,6 @@ class Parameter:
         self.evaluate_negative_data = False
         self.__init_size = init_size
         self.re_eval_solution = True
-        self.drop_re_eval = False
-        self.distance_replace = False
-        self.replace_func = lambda x: False
-        self.adaptive_preceision = False
-        self.expon_explore_rate = False
         if budget != 0 and autoset is True:
             self.auto_set(budget)
         return

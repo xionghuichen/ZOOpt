@@ -107,15 +107,23 @@ class SRacos(RacosCommon):
             _, dis = self.get_parameters().replace_func(x)
             avg_dis_norm = []
             found = False
+            update = False
             random_index = list(range(len(iset)))
             shuffle(random_index)
             for index in random_index:
                 replace, norm = self.get_parameters().replace_func(iset[index])
                 avg_dis_norm.append(norm)
-                ToolFunction.log('[distance_replace %s] dis %s, norm %s' %(iset_type, dis, norm))
+                ToolFunction.log('[distance_replace %s][%s] dis %.5f, norm %.5f. value %.5f, set_value %.5f' %(iset_type, index,
+                                                                                                       dis, norm,
+                                                                                                       x.get_value(),
+                                                                                                       iset[index].get_value()))
                 logger.record_tabular('distance', norm)
                 logger.dump_tabular()
                 if replace and dis < norm:
+                    # if iset[index].get_value() < x.get_value() and iset_type == 'pos':
+                    #     update = True
+                    if index == 0  and iset_type == 'pos':
+                        self.last_best = self._positive_data[1]
                     sol = iset[index]
                     iset[index] = x
                     found = True
@@ -123,6 +131,9 @@ class SRacos(RacosCommon):
                     break
             logger.record_tabular('distance/rep_freq', np.mean(self._parameter.replace_frequent))
             if found:
+                # if update:
+                #     self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
+                #     self.last_best = self._positive_data[0]
                 self._parameter.replace_frequent.append(1)
                 return sol
             else:

@@ -20,6 +20,7 @@ from zoopt.utils.tool_function import ToolFunction
 from zoopt.algos.racos.sracos import SRacos
 from collections import deque
 import numpy as np
+from baselines import logger
 
 class SRacosReEval(SRacos):
 
@@ -41,6 +42,8 @@ class SRacosReEval(SRacos):
         self.finish_init = False
         self.must_select_index = self._parameter.must_select_index
         self.history_best_value = deque(maxlen=50)
+        self.reach_low_bound_distance = False
+        self.generate_failed = False
         return
 
     # SRacos's optimization function
@@ -155,6 +158,7 @@ class SRacosReEval(SRacos):
         return self.get_best_solution()
 
     def get_best_solution(self):
+        self.print_all_solution(record=True, name='best_solution')
         return self._positive_data[0]
 
     def sort_solution_list(self, solution_list, key=lambda x: x.get_value()):
@@ -162,6 +166,8 @@ class SRacosReEval(SRacos):
     # Find first element larger than x
 
     def binary_search(self, iset, x, begin, end):
+        if len(iset) == 0:
+            return 0
         x_value = x.get_value()
         if x_value <= iset[begin].get_value():
             return begin
@@ -242,21 +248,9 @@ class SRacosReEval(SRacos):
                 ToolFunction.log("[construct_next_explore_actor] do re-eval")
                 self.in_re_eval_mode = True
                 self.re_eval_index = 0
-
-                if self._parameter.drop_re_eval:
-                    for sol in self._positive_data:
-                        sol.set_value(self._objective.return_before * 0.9 if self._objective.return_before < 0 else self._objective.return_before * 1.1)
-                    self.in_re_eval_mode = False
-                    self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
-                    self._best_solution = self._positive_data[0]
-                    ToolFunction.log("[construct_next_explore_actor] end re-eval")
-                    self.end_re_eval_solution()
-                    return self.generate_solution()
-                    # self.re_eval_solution_list = self._positive_data.copy()
-                else:
-                    self.re_eval_solution_list = self._positive_data.copy()
-                    # self.re_eval_solution_list = self._positive_data
-                    return self.get_next_re_eval_solution()
+                self.re_eval_solution_list = self._positive_data.copy()
+                # self.re_eval_solution_list = self._positive_data
+                return self.get_next_re_eval_solution()
             elif self.in_re_eval_mode:
                 ToolFunction.log("[construct_next_explore_actor] in re-eval. get next solution")
                 return self.get_next_re_eval_solution()
@@ -279,7 +273,8 @@ class SRacosReEval(SRacos):
                 if self.current_not_distinct_times >= 100:
                     ToolFunction.log(
                         "[break loop] distinct_flag is false too much times")
-                    return self.get_best_solution()
+                    self.generate_failed = True
+                    return None, None# self.get_best_solution()
                 else:
                     return self.generate_solution()
         # self.current_solution = x
@@ -294,6 +289,9 @@ class SRacosReEval(SRacos):
         feed_solution.set_post_attach(attach)
         ToolFunction.log("[update racos] idx %s. solution info:" % (idx))
         feed_solution.print_solution(self._parameter, record=True)
+        if self.generate_failed:
+            ToolFunction.log("[WARNING] generate failed")
+            return self.get_best_solution()
         if idx < self._parameter.get_train_size():
             # do nothing.
             self._data.append(feed_solution)
@@ -310,15 +308,11 @@ class SRacosReEval(SRacos):
             self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
             self._best_solution = self._positive_data[0]
             self.update_ub()
-            if self.get_parameters().adaptive_preceision:
-                for i in range(round(len(self._positive_data) / 2.0)):
-                    self.history_best_value.append(self._positive_data[i].get_value())
-                if len(self.history_best_value) == self.history_best_value.maxlen:
-                    self.get_parameters().set_max_stay_precision(np.std(self.history_best_value))
             if self.last_best is not None and \
                     (self.last_best.get_value() - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()\
                     # and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value())\
-                    or self._objective.return_before - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()):
+                    or (self._objective.return_before - self._best_solution.get_value() <= self._parameter.get_max_stay_precision() \
+                        and self._parameter.early_stop > 0)):
                 if not self.last_times_update_success:
                     self.non_update_times_cumulative += 1
                 else:
@@ -335,7 +329,7 @@ class SRacosReEval(SRacos):
                     ToolFunction.log(
                         "[break loop] because stay longer than max_stay_times, break loop")
                     self.need_restart = True
-                    return self._best_solution
+                    return self.get_best_solution()
             else:
                 if self.last_times_update_success:
                     self.non_update_times_cumulative += 1
@@ -358,14 +352,13 @@ class SRacosReEval(SRacos):
             self.last_best = self._best_solution
 
             # early stop
-            if self._parameter.early_stop is not None and not self.dont_early_stop:
+            if self._parameter.early_stop > 0 and not self.dont_early_stop:
                 # 当前的solution value 应该小于某一个阈值,这个阈值应该比上一次的opt得到的return更容易达到.所以我们需要让return_before向大的方向移动.
                 if feed_solution.get_value() < self._objective.return_before * 0.99 \
                         if self._objective.return_before < 0 else self._objective.return_before * 1.01:
                     self.dont_early_stop = True
                 elif idx - self.get_parameters().get_train_size() > self._parameter.early_stop:
-                    ToolFunction.log(
-                        '[break loop] early stop for too low value.')
+                    ToolFunction.log('[break loop] early stop for too low value.')
                     self.need_restart = True
                     return self.get_best_solution()
                 ToolFunction.log(
@@ -375,8 +368,27 @@ class SRacosReEval(SRacos):
             ToolFunction.log('[iter log] idx %s - %s, counter %s, non_update_times %s, non_update_allowed %s ' % (
                 idx, self.get_parameters().get_train_size(), self.solution_counter,
                 self.non_update_times, self._parameter.get_non_update_allowed()))
-            if self.solution_counter % 10 <= 3:
-                self.print_all_solution(record=True, name='best_solution')
+
+
+            if self.solution_counter % 3 == 0:
+                need_restartd_list = []
+                d_list = []
+                de_list = []
+                for pos in self._positive_data:
+                    x_p = np.array(pos.get_x())[:-1]
+                    for neg in self._negative_data:
+                        x_n = np.array(neg.get_x())[:-1]
+                        d = np.sqrt(np.sum(np.square((x_p - x_n))))
+                        de = np.sqrt(np.mean(np.square((x_p - x_n))))
+                        d_list.append(d)
+                        de_list.append(de)
+                logger.record_tabular('racos/d', np.mean(d_list))
+                logger.record_tabular('racos/de', np.mean(de_list))
+                logger.record_tabular('racos/de_stop', 0)
+                logger.dump_tabular()
+
+            if self.solution_counter % 10 <= 2:
+                self.print_all_solution(record=False)
         return None
 
     def _is_worest(self, solution):

@@ -28,6 +28,7 @@ class Solution:
 
     # Deep copy this solution. Note that the attachment is not deeply copied
     def deep_copy(self):
+        assert False, "should not use this function"
         x = []
         for x_i in self.__x:
             x.append(x_i)
@@ -111,10 +112,7 @@ class Solution:
         max_x = np.max(x_2)
         mean_x = np.mean(x_2)
         std_x = np.std(x_2)
-        if parameter.expon_explore_rate:
-            hp =  10 ** x[-1]
-        else:
-            hp = x[-1]
+        hp = x[-1]
         value = self.__value
         ToolFunction.log('value: %s, min_x: %s, max_x: %s, mean_x %s, std_x %s. hp %s\n'
                          'scalar: min_x: %s, max_x: %s, mean_x %s, std_x %s.' %(
