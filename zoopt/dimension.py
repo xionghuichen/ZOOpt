@@ -66,11 +66,9 @@ class Dimension:
         for i in range(self._size):
             if self._types[i] is True:
                 if not self.include_upper_bound:
-                    value = gl.rand.uniform(
-                        self._regions[i][0], self._regions[i][1])
+                    value = gl.rand.uniform(self._regions[i][0], self._regions[i][1])
                 else:
-                    value = gl.rand.uniform(
-                        self._regions[i][0], self._regions[i][1]+gl.precision * 2)
+                    value = gl.rand.uniform(self._regions[i][0], self._regions[i][1]+gl.precision * 2)
             else:
                 rand_index = gl.rand.randint(0, len(self._regions[i]) - 1)
                 value = self._regions[i][rand_index]

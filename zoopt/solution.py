@@ -28,6 +28,7 @@ class Solution:
 
     # Deep copy this solution. Note that the attachment is not deeply copied
     def deep_copy(self):
+        assert False, "should not use this function"
         x = []
         for x_i in self.__x:
             x.append(x_i)
