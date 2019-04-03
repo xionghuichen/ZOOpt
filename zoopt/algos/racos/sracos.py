@@ -122,7 +122,7 @@ class SRacos(RacosCommon):
                 if replace and dis < norm:
                     # if iset[index].get_value() < x.get_value() and iset_type == 'pos':
                     #     update = True
-                    if index == 0  and iset_type == 'pos':
+                    if index == 0 and iset_type == 'pos':
                         self.last_best = self._positive_data[1]
                     sol = iset[index]
                     iset[index] = x
@@ -138,7 +138,7 @@ class SRacos(RacosCommon):
                 return sol
             else:
                 self._parameter.replace_frequent.append(0)
-                ToolFunction.log('not found for distance solution')
+                ToolFunction.log('distance solution not found')
         if strategy == 'WR':
             return self.strategy_wr(iset, x, iset_type)
         elif strategy == 'RR':
