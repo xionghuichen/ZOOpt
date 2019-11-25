@@ -103,8 +103,8 @@ class Solution:
     def get_attach(self):
         return self.__attach
 
-    def print_solution(self, parameter, record=False, name='solution'):
-        from baselines import logger
+    def print_solution(self, parameter, record=False, name='dao'):
+        from SLBDAO.common import logger
         import numpy as np
         x = np.array(self.__x)
         x_2 = x[:-1]
@@ -123,16 +123,16 @@ class Solution:
             min_x* hp, max_x* hp, mean_x* hp, std_x* hp,
         ))
         if record:
-            logger.record_tabular(name+"/value", value)
-            logger.record_tabular(name+"/min_x", min_x)
-            logger.record_tabular(name+"/max_x", max_x)
-            logger.record_tabular(name+"/mean_x", mean_x)
-            logger.record_tabular(name+"/std_x", std_x)
-            logger.record_tabular(name+"/scalar_min_x", min_x * hp)
-            logger.record_tabular(name+"/scalar_max_x", max_x * hp)
-            logger.record_tabular(name+"/scalar_mean_x", mean_x * hp)
-            logger.record_tabular(name+"/scalar_std_x", std_x * hp)
-            logger.record_tabular(name + "/hp", hp)
+            logger.record_tabular(name+"/solution-value", value)
+            logger.record_tabular(name+"/solution-min_x", min_x)
+            logger.record_tabular(name+"/solution-max_x", max_x)
+            logger.record_tabular(name+"/solution-mean_x", mean_x)
+            logger.record_tabular(name+"/solution-std_x", std_x)
+            logger.record_tabular(name+"/solution-scalar_min_x", min_x * hp)
+            logger.record_tabular(name+"/solution-scalar_max_x", max_x * hp)
+            logger.record_tabular(name+"/solution-scalar_mean_x", mean_x * hp)
+            logger.record_tabular(name+"/solution-scalar_std_x", std_x * hp)
+            logger.record_tabular(name + "/solution-alpha", hp)
             logger.dump_tabular()
         return value, min_x, max_x, mean_x, std_x
 

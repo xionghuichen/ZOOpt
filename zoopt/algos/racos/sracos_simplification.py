@@ -22,7 +22,7 @@ from collections import deque
 import numpy as np
 from baselines import logger
 
-class SRacosReEval(SRacos):
+class SRacosSimple(SRacos):
 
     def __init__(self, objective, parameter, strategy='WR', ub=1):
         self.strategy = strategy
@@ -90,6 +90,8 @@ class SRacosReEval(SRacos):
         return solution, idx
 
     def generate_solution(self):
+        assert not self.need_restart
+
         if self.solution_counter < len(self.init_data):
             ToolFunction.log(" [generate_solution] init_data . counter %s" % self.solution_counter)
             x = self._objective.construct_solution(self.init_data[self.solution_counter])
@@ -102,55 +104,56 @@ class SRacosReEval(SRacos):
                     self.solution_counter = self._parameter.get_train_size()
                     return self.generate_solution()
             else:
-                if self.solution_counter < self._parameter.get_positive_size():
-                    ToolFunction.log(" [generate_solution] set positive data")
-                    x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
-                                                                     data_num=self._parameter.get_train_size())
-                    if x is None:
-                        self.solution_counter = self._parameter.get_train_size()
-                        return self.generate_solution()
-                else:
-                    ToolFunction.log(" [generate_solution] set negative data")
-                    for i in range(self.get_parameters().get_negative_size()):
-                        x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
-                                                                         data_num=self._parameter.get_train_size())
-                        x.set_value(999999)
-                        self._data.append(x)
-                        self.solution_counter += 1
-                    self.selection(self._data)
-                    self.print_all_solution()
-                    self.finish_init = True
-                    return self.generate_solution()
+                assert False
+                # if self.solution_counter < self._parameter.get_positive_size():
+                #     ToolFunction.log(" [generate_solution] set positive data")
+                #     x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
+                #                                                      data_num=self._parameter.get_train_size())
+                #     if x is None:
+                #         self.solution_counter = self._parameter.get_train_size()
+                #         return self.generate_solution()
+                # else:
+                #     ToolFunction.log(" [generate_solution] set negative data")
+                #     for i in range(self.get_parameters().get_negative_size()):
+                #         x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
+                #                                                          data_num=self._parameter.get_train_size())
+                #         x.set_value(999999)
+                #         self._data.append(x)
+                #         self.solution_counter += 1
+                #     self.selection(self._data)
+                #     self.print_all_solution()
+                #     self.finish_init = True
+                #     return self.generate_solution()
         else:
 
             if not self.finish_init:
                 ToolFunction.log(" [generate_solution][WARNING] didn't finish init yet: %s. " % self.solution_counter)
                 return None, None
             # in_re_eval_mode should only call once a time.
-            if not self.in_re_eval_mode and self.get_parameters().re_eval_solution and (self.non_update_times + 1) % int(
-                    self._parameter.get_non_update_allowed() / 1.5) == 0:
-                self.non_update_times += 1
-                ToolFunction.log("[construct_next_explore_actor] do re-eval")
-                self.in_re_eval_mode = True
-                self.re_eval_index = 0
-
-                if self._parameter.drop_re_eval:
-                    for sol in self._positive_data:
-                        sol.set_value(self._objective.return_before * 0.9 if self._objective.return_before < 0 else self._objective.return_before * 1.1)
-                    self.in_re_eval_mode = False
-                    self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
-                    self._best_solution = self._positive_data[0]
-                    ToolFunction.log("[construct_next_explore_actor] end re-eval")
-                    self.end_re_eval_solution()
-                    return self.generate_solution()
-                    # self.re_eval_solution_list = self._positive_data.copy()
-                else:
-                    self.re_eval_solution_list = self._positive_data.copy()
-                    # self.re_eval_solution_list = self._positive_data
-                    return self.get_next_re_eval_solution()
-            elif self.in_re_eval_mode:
-                ToolFunction.log("[construct_next_explore_actor] in re-eval. get next solution")
-                return self.get_next_re_eval_solution()
+            # if not self.in_re_eval_mode and self.get_parameters().re_eval_solution and (self.non_update_times + 1) % int(
+            #         self._parameter.get_non_update_allowed() / 1.5) == 0:
+            #     self.non_update_times += 1
+            #     ToolFunction.log("[construct_next_explore_actor] do re-eval")
+            #     self.in_re_eval_mode = True
+            #     self.re_eval_index = 0
+            #
+            #     if self._parameter.drop_re_eval:
+            #         for sol in self._positive_data:
+            #             sol.set_value(self._objective.return_before * 0.9 if self._objective.return_before < 0 else self._objective.return_before * 1.1)
+            #         self.in_re_eval_mode = False
+            #         self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
+            #         self._best_solution = self._positive_data[0]
+            #         ToolFunction.log("[construct_next_explore_actor] end re-eval")
+            #         self.end_re_eval_solution()
+            #         return self.generate_solution()
+            #         # self.re_eval_solution_list = self._positive_data.copy()
+            #     else:
+            #         self.re_eval_solution_list = self._positive_data.copy()
+            #         # self.re_eval_solution_list = self._positive_data
+            #         return self.get_next_re_eval_solution()
+            # elif self.in_re_eval_mode:
+            #     ToolFunction.log("[construct_next_explore_actor] in re-eval. get next solution")
+            #     return self.get_next_re_eval_solution()
             ToolFunction.log(" [generate_solution] generate by classfication. counter %s" % self.solution_counter)
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
@@ -181,6 +184,9 @@ class SRacosReEval(SRacos):
         return x, post_index
 
     def update_racos_stats(self, solution_eval, attach, feed_solution, idx):
+        if self.need_restart:
+            logger.warn("[WARN] SRACOS need restart")
+            return None
         assert isinstance(feed_solution, Solution)
         feed_solution.set_value(solution_eval)
         feed_solution.set_post_attach(attach)
@@ -197,6 +203,7 @@ class SRacosReEval(SRacos):
             self.selection(self._data)
             self.finish_init = True
         else:
+            self.selection(self._positive_data + self._negative_data)
             bad_ele = self.replace(self._positive_data, feed_solution, 'pos')
             ToolFunction.log("[update racos] replace solution :")
             bad_ele.print_solution(self._parameter, record=False)
@@ -205,52 +212,6 @@ class SRacosReEval(SRacos):
             self._positive_data = sorted(self._positive_data, key=lambda x: x.get_value())
             self._best_solution = self._positive_data[0]
             self.update_ub()
-            if self.get_parameters().adaptive_preceision:
-                for i in range(round(len(self._positive_data) / 2.0)):
-                    self.history_best_value.append(self._positive_data[i].get_value())
-                if len(self.history_best_value) == self.history_best_value.maxlen:
-                    self.get_parameters().set_max_stay_precision(np.std(self.history_best_value))
-            if self.last_best is not None and \
-                    (self.last_best.get_value() - self._best_solution.get_value() <= self._parameter.get_max_stay_precision()\
-                    # and (self._parameter.get_terminal_value() is None or self._best_solution.get_value() > self._parameter.get_terminal_value())\
-                    or (self._objective.return_before - self._best_solution.get_value() <= self._parameter.get_max_stay_precision() \
-                        and self._parameter.early_stop > 0)):
-                if not self.last_times_update_success:
-                    self.non_update_times_cumulative += 1
-                else:
-                    self.last_times_update_success = False
-                    self.non_update_times_cumulative = 1
-                self.non_update_times += 1# self.non_update_times_cumulative
-                ToolFunction.log(
-                    "[not update best] last best %s , current best %s. on_policy_ret %s, precision %s, non update cumulative %s" % (self.last_best.get_value(),
-                                                                                    self._best_solution.get_value(),
-                                                                                    self._objective.return_before,
-                                                                                    self._parameter.get_max_stay_precision(),
-                                                                                    self.non_update_times_cumulative))
-                if self.non_update_times >= self._parameter.get_non_update_allowed():
-                    ToolFunction.log(
-                        "[break loop] because stay longer than max_stay_times, break loop")
-                    self.need_restart = True
-                    return self.get_best_solution()
-            else:
-                if self.last_times_update_success:
-                    self.non_update_times_cumulative += 1
-                else:
-                    self.last_times_update_success = True
-                    self.non_update_times_cumulative = 1
-                self.non_update_times /= 2
-                # self.non_update_times -= self.non_update_times_cumulative
-                if self.non_update_times < 0:
-                    self.non_update_times = 0
-                if self.last_best is not None:
-                    ToolFunction.log(
-                        "[update best] last best %s , current best %s. on_policy_ret %s, precision %s, non update cumulative %s. " % (
-                                                                                        self.last_best.get_value(),
-                                                                                        self._best_solution.get_value(),
-                                                                                        self._objective.return_before,
-                                                                                        self._parameter.get_max_stay_precision(),
-                                                                                        self.non_update_times_cumulative))
-
             self.last_best = self._best_solution
 
             # early stop
@@ -276,15 +237,9 @@ class SRacosReEval(SRacos):
                 de_list = []
                 for pos in self._positive_data:
                     x_p = np.array(pos.get_x())[:-1]
-                    for neg in self._negative_data:
-                        x_n = np.array(neg.get_x())[:-1]
-                        d = np.sqrt(np.sum(np.square((x_p - x_n))))
-                        de = np.sqrt(np.mean(np.square((x_p - x_n))))
-                        d_list.append(d)
-                        de_list.append(de)
-                logger.record_tabular('racos/d', np.mean(d_list))
-                logger.record_tabular('racos/de', np.mean(de_list))
-                if self.get_parameters().low_bound_distance > 0 and np.mean(de_list) < self.get_parameters().low_bound_distance:
+                    de_list.append(x_p)
+                logger.record_tabular('racos/positive_data_std', np.std(de_list))
+                if self.get_parameters().low_bound_distance > 0 and np.std(de_list) < self.get_parameters().low_bound_distance:
                     logger.record_tabular('racos/de_stop', 1)
                     self.need_restart = True
                     return self.get_best_solution()

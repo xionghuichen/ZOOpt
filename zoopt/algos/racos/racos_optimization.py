@@ -1,5 +1,6 @@
 from zoopt.algos.racos.ssracos import SSRacos
 from zoopt.algos.racos.sracos_re_eval import SRacosReEval
+from zoopt.algos.racos.sracos_simplification import SRacosSimple
 from zoopt.algos.racos.sracos import SRacos
 from zoopt.algos.racos.racos import Racos
 
@@ -29,7 +30,7 @@ class RacosOptimization:
             if not parameter.get_suppressioin():
                 self.__algorithm = SRacos(self.objective, self.parameter, self.strategy, self.ub)
             elif parameter.use_re_eval:
-                self.__algorithm = SRacosReEval(self.objective, self.parameter, self.strategy, self.ub)
+                self.__algorithm = SRacosSimple(self.objective, self.parameter, self.strategy, self.ub)
             else:
                 self.__algorithm = SSRacos(self.objective, self.parameter, self.strategy, self.ub)
         else:
