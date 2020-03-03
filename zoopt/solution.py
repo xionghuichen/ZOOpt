@@ -104,7 +104,7 @@ class Solution:
         return self.__attach
 
     def print_solution(self, parameter, record=False, name='dao'):
-        from SLBDAO.common import logger
+        from RLA.easy_log import logger
         import numpy as np
         x = np.array(self.__x)
         x_2 = x[:-1]

@@ -20,7 +20,8 @@ from zoopt.utils.tool_function import ToolFunction
 from zoopt.algos.racos.sracos import SRacos
 from collections import deque
 import numpy as np
-from baselines import logger
+from RLA.easy_log import logger
+
 
 class SRacosSimple(SRacos):
 
