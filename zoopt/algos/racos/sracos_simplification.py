@@ -157,8 +157,13 @@ class SRacosSimple(SRacos):
             #     return self.get_next_re_eval_solution()
             ToolFunction.log(" [generate_solution] generate by classfication. counter %s" % self.solution_counter)
             if gl.rand.random() < self._parameter.get_probability():
+                # if self._positive_data[0].get
+                if len(self.baseline_data) > 0 and self.baseline_data[0].get_value() < self._positive_data[0].get_value():
+                    pd = self._positive_data + self.baseline_data
+                else:
+                    pd = self._positive_data
                 classifier = RacosClassification(
-                    self._objective.get_dim(), self._positive_data + self.baseline_data,
+                    self._objective.get_dim(), pd,
                     self._negative_data, self.must_select_index, self.ub)
                 classifier.mixed_classification()
                 x, distinct_flag = self.distinct_sample_classifier(
