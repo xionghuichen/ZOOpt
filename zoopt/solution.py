@@ -1,6 +1,7 @@
 
 from zoopt.utils.zoo_global import pos_inf, neg_inf, nan, gl
 from zoopt.utils.tool_function import ToolFunction
+from RLA.easy_log import logger
 
 """
 The class Solution was implemented in this file.
@@ -104,7 +105,6 @@ class Solution:
         return self.__attach
 
     def print_solution(self, parameter, record=False, name='dao'):
-        from RLA.easy_log import logger
         import numpy as np
         x = np.array(self.__x)
         x_2 = x[:-1]

@@ -44,6 +44,7 @@ class SRacosSimple(SRacos):
         self.must_select_index = self._parameter.must_select_index
         self.history_best_value = deque(maxlen=50)
         self.generate_failed = False
+        self.baseline_data = []
         return
 
     def get_best_solution(self):
@@ -96,7 +97,7 @@ class SRacosSimple(SRacos):
         if self.solution_counter < len(self.init_data):
             ToolFunction.log(" [generate_solution] init_data . counter %s" % self.solution_counter)
             x = self._objective.construct_solution(self.init_data[self.solution_counter])
-        elif self.solution_counter < self._parameter.get_train_size():
+        elif self.solution_counter <= self._parameter.get_train_size():
             if self._parameter.evaluate_negative_data:
                 ToolFunction.log(" [generate_solution] init_data random sampling. counter %s" % self.solution_counter)
                 x, distinct_flag = self.distinct_sample_from_set(self._objective.get_dim(), self._data,
@@ -126,7 +127,6 @@ class SRacosSimple(SRacos):
                 #     self.finish_init = True
                 #     return self.generate_solution()
         else:
-
             if not self.finish_init:
                 ToolFunction.log(" [generate_solution][WARNING] didn't finish init yet: %s. " % self.solution_counter)
                 return None, None
@@ -158,7 +158,8 @@ class SRacosSimple(SRacos):
             ToolFunction.log(" [generate_solution] generate by classfication. counter %s" % self.solution_counter)
             if gl.rand.random() < self._parameter.get_probability():
                 classifier = RacosClassification(
-                    self._objective.get_dim(), self._positive_data, self._negative_data, self.must_select_index, self.ub)
+                    self._objective.get_dim(), self._positive_data + self.baseline_data,
+                    self._negative_data, self.must_select_index, self.ub)
                 classifier.mixed_classification()
                 x, distinct_flag = self.distinct_sample_classifier(
                     classifier, True, self._parameter.get_train_size())
@@ -175,7 +176,8 @@ class SRacosSimple(SRacos):
                     ToolFunction.log(
                         "[break loop] distinct_flag is false too much times")
                     self.generate_failed = True
-                    return None, None# self.get_best_solution()
+                    self.solution_counter += 1
+                    return self.get_best_solution(), self.solution_counter  # self.get_best_solution()
                 else:
                     return self.generate_solution()
         # self.current_solution = x
@@ -183,6 +185,9 @@ class SRacosSimple(SRacos):
         post_index = self.solution_counter
 
         return x, post_index
+
+    def update_baseline_solution(self, feed_solution):
+        self.baseline_data = [feed_solution]
 
     def update_racos_stats(self, solution_eval, attach, feed_solution, idx):
         if self.need_restart:
