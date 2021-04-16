@@ -242,23 +242,23 @@ class SRacosSimple(SRacos):
             ToolFunction.log('[iter log] idx %s - %s, counter %s, non_update_times %s, non_update_allowed %s ' % (
                 idx, self.get_parameters().get_train_size(), self.solution_counter,
                 self.non_update_times, self._parameter.get_non_update_allowed()))
-            if self.solution_counter % 3 == 0:
-                need_restartd_list = []
-                d_list = []
-                de_list = []
-                for pos in self._positive_data:
-                    x_p = np.array(pos.get_x())[:-1]
-                    de_list.append(x_p)
-                logger.record_tabular('racos/positive_data_std', np.std(de_list))
-                if self.get_parameters().low_bound_distance > 0 and np.std(de_list) < self.get_parameters().low_bound_distance:
-                    logger.record_tabular('racos/de_stop', 1)
-                    self.need_restart = True
-                    return self.get_best_solution()
-                else:
-                    logger.record_tabular('racos/de_stop', 0)
-                logger.dump_tabular()
+            # if self.solution_counter % 3 == 0:
+            #     need_restartd_list = []
+            #     d_list = []
+            #     de_list = []
+            #     for pos in self._positive_data:
+            #         x_p = np.array(pos.get_x())[:-1]
+            #         de_list.append(x_p)
+            #     logger.record_tabular('racos/positive_data_std', np.std(de_list))
+            #     if self.get_parameters().low_bound_distance > 0 and np.std(de_list) < self.get_parameters().low_bound_distance:
+            #         logger.record_tabular('racos/de_stop', 1)
+            #         self.need_restart = True
+            #         return self.get_best_solution()
+            #     else:
+            #         logger.record_tabular('racos/de_stop', 0)
+            #     logger.dump_tabular()
 
-            if self.solution_counter % 10 <= 2:
+            if self.solution_counter % 100 <= 2:
                 self.print_all_solution(record=False)
         return None
 

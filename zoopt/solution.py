@@ -107,13 +107,13 @@ class Solution:
     def print_solution(self, parameter, record=False, name='dao'):
         import numpy as np
         x = np.array(self.__x)
-        x_2 = x[:-1]
+        x_2 = x
         min_x = np.min(x_2)
         max_x = np.max(x_2)
         mean_x = np.mean(x_2)
         std_x = np.std(x_2)
         if parameter.expon_explore_rate:
-            hp =  10 ** x[-1]
+            hp = 10 ** x[-1]
         else:
             hp = x[-1]
         value = self.__value
