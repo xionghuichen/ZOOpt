@@ -31,6 +31,7 @@ class SRacosSimple(SRacos):
         self.init_ub = ub
         self.solution_counter = 0
         self.init_data = self._parameter.get_init_samples()
+        self.budget = self._parameter.get_budget()
         self.current_not_distinct_times = 0
         self.current_solution = None
         self.non_update_times = 0
@@ -158,7 +159,7 @@ class SRacosSimple(SRacos):
             ToolFunction.log(" [generate_solution] generate by classfication. counter %s" % self.solution_counter)
             if gl.rand.random() < self._parameter.get_probability():
                 # if self._positive_data[0].get
-                if len(self.baseline_data) > 0 and self.baseline_data[0].get_value() < self._positive_data[0].get_value():
+                if len(self.baseline_data) > 0:
                     pd = self._positive_data + self.baseline_data
                 else:
                     pd = self._positive_data
@@ -239,6 +240,10 @@ class SRacosSimple(SRacos):
                     '[early stop warning ]: current solution idx %s - %s, target %s. current value %s. target value %s' % (
                         idx, self.get_parameters().get_train_size(),
                         self._parameter.early_stop, feed_solution.get_value(), self._objective.return_before * 0.9))
+            if idx > self.budget:
+                ToolFunction.log(f'[end loop] reach the budget: {idx}')
+                self.need_restart = True
+                return self.get_best_solution()
             ToolFunction.log('[iter log] idx %s - %s, counter %s, non_update_times %s, non_update_allowed %s ' % (
                 idx, self.get_parameters().get_train_size(), self.solution_counter,
                 self.non_update_times, self._parameter.get_non_update_allowed()))
